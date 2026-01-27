@@ -1,26 +1,32 @@
 import { useRef, useState, useEffect } from "react";
 import HeroBackground from "./components/HeroBackground";
 import Hero from "./components/Hero";
-import ColorPicker from "./components/ColorPicker";
 import NavBar from "./components/NavBar";
 import Projects from "./components/Projects";
+import Admin from "./components/Admin";
+import { testConnection } from "./firebase";
 
 export default function App() {
   const uniformsRef = useRef(null);
-  const [showColorPicker, setShowColorPicker] = useState(true);
   const [showProjects, setShowProjects] = useState(true);
+  const [showAdmin, setShowAdmin] = useState(false);
+
+  useEffect(() => {
+    // Test Firebase connection on app load
+    testConnection();
+  }, []);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Toggle color picker with ":" key (shift + ; on US keyboard)
-      if (e.key === ":" || (e.shiftKey && e.key === ";")) {
-        e.preventDefault();
-        setShowColorPicker((prev) => !prev);
-      }
       // Toggle projects with "1" key
       if (e.key === "1") {
         e.preventDefault();
         setShowProjects((prev) => !prev);
+      }
+      // Toggle admin with "Escape" key
+      if (e.key === "Escape") {
+        e.preventDefault();
+        setShowAdmin((prev) => !prev);
       }
     };
 
@@ -29,11 +35,14 @@ export default function App() {
   }, []);
 
   return (
-    <>{showProjects && <Projects />}
+    <>
       <HeroBackground uniformsRef={uniformsRef} />
+      <Hero uniformsRef={uniformsRef} />
       <NavBar />
-      <Hero />
-      {showColorPicker && <ColorPicker uniformsRef={uniformsRef} />}
+      <div style={{ position: "relative", zIndex: 2, marginTop: "100vh" }}>
+        {showProjects && <Projects uniformsRef={uniformsRef} />}
+        {showAdmin && <Admin onColorsChange={() => {}} uniformsRef={uniformsRef} />}
+      </div>
     </>
   );
 }

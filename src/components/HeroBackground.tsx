@@ -1,6 +1,18 @@
 import { useEffect, useRef } from "react";
 import * as THREE from "three";
 
+/**
+ * Shader uniform variables for the hero background animation
+ * @interface ShaderUniforms
+ * @property {Object} uTime - Elapsed time in seconds
+ * @property {Object} uFlowTime - Flow animation time
+ * @property {Object} uRes - Canvas resolution
+ * @property {Object} uMouse - Normalized mouse position
+ * @property {Object} uColor1 - Primary color
+ * @property {Object} uColor2 - Secondary color
+ * @property {Object} uColor3 - Tertiary color
+ * @property {Object} uColor4 - Quaternary color
+ */
 interface ShaderUniforms {
   uTime: { value: number };
   uFlowTime: { value: number };
@@ -12,10 +24,25 @@ interface ShaderUniforms {
   uColor4: { value: THREE.Color };
 }
 
+/**
+ * HeroBackground component renders an animated WebGL shader background
+ * 
+ * This component creates an interactive animated background using Three.js and custom shaders.
+ * The animation responds to mouse movement and respects prefers-reduced-motion preferences.
+ * 
+ * @component
+ * @param {Object} props - Component props
+ * @param {React.Ref<ShaderUniforms | null>} [props.uniformsRef] - Optional reference to access shader uniforms
+ * @returns {React.ReactElement} Canvas element with fixed positioning for full viewport coverage
+ * 
+ * @example
+ * const uniformsRef = useRef<ShaderUniforms | null>(null);
+ * return <HeroBackground uniformsRef={uniformsRef} />;
+ */
 export default function HeroBackground({
   uniformsRef,
 }: {
-  uniformsRef?: React.MutableRefObject<ShaderUniforms | null>;
+  uniformsRef?: React.Ref<ShaderUniforms | null>;
 } = {}) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
@@ -41,13 +68,13 @@ export default function HeroBackground({
       uFlowTime: { value: 0 },
       uRes: { value: new THREE.Vector2(1, 1) },
       uMouse: { value: new THREE.Vector2(0.5, 0.5) },
-      uColor1: { value: new THREE.Color("#05060a").convertSRGBToLinear() },
-      uColor2: { value: new THREE.Color("#2094C5").convertSRGBToLinear() },
-      uColor3: { value: new THREE.Color("#b4532a").convertSRGBToLinear() },
-      uColor4: { value: new THREE.Color("#d7c8a2").convertSRGBToLinear() },
+      uColor1: { value: new THREE.Color("#260b54").convertSRGBToLinear() },
+      uColor2: { value: new THREE.Color("#095f75").convertSRGBToLinear() },
+      uColor3: { value: new THREE.Color("#2b716b").convertSRGBToLinear() },
+      uColor4: { value: new THREE.Color("#a9a2d7").convertSRGBToLinear() },
     };
 
-    if (uniformsRef) {
+    if (uniformsRef && typeof uniformsRef === 'object' && 'current' in uniformsRef) {
       uniformsRef.current = uniforms;
     }
 
@@ -160,6 +187,11 @@ void main(){
     scene.add(mesh);
 
     const resize = () => {
+      /**
+       * Handles canvas resize events and updates shader uniforms
+       * Maintains proper aspect ratio and pixel ratio for high DPI displays
+       * @private
+       */
       const w = window.innerWidth;
       const h = window.innerHeight;
       renderer.setSize(w, h, false);
@@ -180,6 +212,12 @@ void main(){
     let raf = 0;
 
     const onPointerMove = (e: PointerEvent) => {
+      /**
+       * Updates target mouse position based on pointer events
+       * Normalizes coordinates to 0-1 range with y-axis inverted
+       * @param {PointerEvent} e - Pointer event from mouse/touch movement
+       * @private
+       */
       mouseTarget.set(
         e.clientX / window.innerWidth,
         1 - e.clientY / window.innerHeight
@@ -190,12 +228,25 @@ void main(){
 
     let last = performance.now();
 
-    const tauMouse = 0.22;
-    const tauDrive = 0.30;
-    const driveGain = 2.2;
-    const flowSpeed = 0.7;
+    const tauMouse = 0.12;
+    const tauDrive = 0.20;
+    const driveGain = 1.2;
+    const flowSpeed = 0.5;
 
     const tick = () => {
+      /**
+       * Main animation loop executed every frame
+       * 
+       * Handles:
+       * - Mouse position smoothing with exponential decay
+       * - Drive velocity calculation based on mouse movement
+       * - Flow time animation driven by user interaction
+       * - Shader uniform updates
+       * - Renderer frame updates
+       * 
+       * @private
+       * @returns {void}
+       */
       const now = performance.now();
       const dt = (now - last) / 1000;
       last = now;

@@ -8,15 +8,24 @@ interface ColorUniforms {
   uColor4: { value: THREE.Color };
 }
 
+interface ColorPickerProps {
+  uniformsRef: MutableRefObject<ColorUniforms | null>;
+  colors?: {
+    c1: string;
+    c2: string;
+    c3: string;
+    c4: string;
+  };
+}
+
 export default function ColorPicker({
   uniformsRef,
-}: {
-  uniformsRef: MutableRefObject<ColorUniforms | null>;
-}) {
-  const [c1, setC1] = useState("#05060a");
-  const [c2, setC2] = useState("#2094C5");
-  const [c3, setC3] = useState("#b4532a");
-  const [c4, setC4] = useState("#d7c8a2");
+  colors: propsColors,
+}: ColorPickerProps) {
+  const [c1, setC1] = useState(propsColors?.c1 || "#05060a");
+  const [c2, setC2] = useState(propsColors?.c2 || "#2094C5");
+  const [c3, setC3] = useState(propsColors?.c3 || "#b4532a");
+  const [c4, setC4] = useState(propsColors?.c4 || "#d7c8a2");
 
   useEffect(() => {
     const u = uniformsRef.current;
