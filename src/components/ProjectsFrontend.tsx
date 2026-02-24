@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, type MutableRefObject } from "react";
+import { useState, useEffect, useRef, type RefObject } from "react";
 import type { CSSProperties } from "react";
 import ColorExtractor from "./ColorExtractor";
 import * as THREE from "three";
@@ -25,13 +25,15 @@ export interface Project {
 interface ProjectsFrontendProps {
   projects: Project[];
   loading: boolean;
-  uniformsRef?: MutableRefObject<ShaderUniforms | null>;
+  uniformsRef?: RefObject<ShaderUniforms | null>;
+  onProjectSelect?: (projectId: string) => void;
 }
 
 export default function ProjectsFrontend({
   projects,
   loading,
   uniformsRef,
+  onProjectSelect,
 }: ProjectsFrontendProps) {
   const [visibleProjectId, setVisibleProjectId] = useState<string | null>(null);
   const sectionRefs = useRef<{ [key: string]: HTMLElement | null }>({});
@@ -88,7 +90,8 @@ export default function ProjectsFrontend({
           ref={(el) => {
             if (el) sectionRefs.current[project.id] = el;
           }}
-          style={fullScreenProjectSection}
+          style={{ ...fullScreenProjectSection, cursor: "pointer" }}
+          onClick={() => onProjectSelect?.(project.id)}
         >
           {/* Use project colors if defined, otherwise extract from image */}
           {uniformsRef && visibleProjectId === project.id && (
@@ -134,7 +137,7 @@ function UpdateColorsScript({
   uniformsRef,
   colors,
 }: {
-  uniformsRef: MutableRefObject<ShaderUniforms | null>;
+  uniformsRef: RefObject<ShaderUniforms | null>;
   colors: [string, string, string, string];
 }) {
   useEffect(() => {

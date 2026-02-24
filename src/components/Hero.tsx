@@ -64,7 +64,7 @@ export default function Hero({
 
       // Calculate opacity and scale based on scroll position
       // Hero section is 100vh tall, so fade out/scale as user scrolls
-      const maxScroll = window.innerHeight; // 100vh in pixels
+      const maxScroll = window.innerHeight * 0.7; // Faster transition over less scroll distance
       const scrollProgress = Math.min(currentScrollY / maxScroll, 1); // 0 to 1
       
       const newOpacity = Math.max(1 - scrollProgress, 0);
@@ -107,6 +107,7 @@ const heroContainer: CSSProperties = {
   justifyContent: "center",
   pointerEvents: "none",
   zIndex: 1,
+  //backgroundColor: "#000",
 };
 
 const content: CSSProperties = {
@@ -118,7 +119,7 @@ const content: CSSProperties = {
   color: "white",
   maxWidth: "600px",
   padding: "40px 20px",
-  transition: "opacity 0.3s ease, transform 0.3s ease",
+  transition: "opacity 0.18s ease-out, transform 0.18s ease-out",
 };
 
 const heading: CSSProperties = {
@@ -147,7 +148,7 @@ const downArrowWrap: CSSProperties = {
   alignItems: "center",
   opacity: 0.8,
   pointerEvents: "none",
-  transition: "opacity 0.3s ease",
+  transition: "opacity 0.18s ease-out",
 };
 
 const downArrowIcon: CSSProperties = {

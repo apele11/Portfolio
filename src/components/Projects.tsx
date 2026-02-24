@@ -1,4 +1,4 @@
-import { useState, useEffect, type MutableRefObject } from "react";
+import { useState, useEffect, type RefObject } from "react";
 import { db } from "../firebase";
 import { collection, onSnapshot } from "firebase/firestore";
 import ProjectsFrontend, { type Project } from "./ProjectsFrontend";
@@ -13,8 +13,10 @@ interface ShaderUniforms {
 
 export default function Projects({
   uniformsRef,
+  onProjectSelect,
 }: {
-  uniformsRef?: MutableRefObject<ShaderUniforms | null>;
+  uniformsRef?: RefObject<ShaderUniforms | null>;
+  onProjectSelect?: (projectId: string) => void;
 } = {}) {
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
@@ -47,6 +49,7 @@ export default function Projects({
       projects={projects}
       loading={loading}
       uniformsRef={uniformsRef}
+      onProjectSelect={onProjectSelect}
     />
   );
 }
