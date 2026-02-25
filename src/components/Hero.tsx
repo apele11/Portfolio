@@ -87,9 +87,9 @@ export default function Hero({
     };
   }, [uniformsRef]);
   return (
-    <div id="hero" style={heroContainer} ref={heroRef}>
+    <div style={heroContainer} ref={heroRef}>
       <div style={{ ...content, opacity, transform: `scale(${scale})` }}>
-        <h1 style={heading}>Emily Apel</h1>
+        <h1 style={heading}>EMILY APEL</h1>
         <p style={paragraph}>Immersive Experience Designer & Creative technologist</p>
       </div>
     <div style={{ ...downArrowWrap, opacity }} aria-hidden="true">
@@ -123,16 +123,20 @@ const content: CSSProperties = {
 };
 
 const heading: CSSProperties = {
-  fontSize: "50px",
+  fontSize: "6rem",
   fontWeight: 700,
-  marginBottom: "8px",
+  marginBottom: "0.5rem",
   margin: 0,
-  fontFamily: "Against, sans-serif",
+  fontFamily: "Aetherin, sans-serif",
   letterSpacing: "0.2em",
+  alignItems: "center",
+  lineHeight: "1.25",
+
 };
 
 const paragraph: CSSProperties = {
   fontSize: "16px",
+  fontFamily: "Space Grotesk, sans-serif",
   opacity: 0.9,
   lineHeight: 1.6,
   margin: 0,

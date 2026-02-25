@@ -70,9 +70,6 @@ export default function ProjectPage({ projectId, onBack, onAdminClick }: Project
 				<div className="project-page">
 					<div className="error-container">
 						<p>{error}</p>
-						<button onClick={onBack} className="back-button">
-							Back to Projects
-						</button>
 					</div>
 				</div>
 			</>

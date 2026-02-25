@@ -53,8 +53,10 @@ export default function Home() {
         </>
       ) : (
         <>
+        <div id={"hero"}>
           <HeroBackground uniformsRef={uniformsRef} />
-          <Hero uniformsRef={uniformsRef} />
+          </div>
+            <Hero uniformsRef={uniformsRef} />
           {!selectedProjectId && <NavBar onAdminClick={() => setShowAdmin(true)} />}
           <div style={{ position: "relative", zIndex: 2, marginTop: "100vh" }}>
             {selectedProjectId ? (

@@ -7,6 +7,55 @@
   font-style: normal;
 }
 
+@font-face {
+  font-family: "GAHIBOE";
+  src: url("/src/fonts/GAHIBOE.otf") format("opentype");
+  font-weight: normal;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: "Reality Stone";
+  src: url("/src/fonts/Reality Stone.ttf") format("trueType");
+  font-weight: normal;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: "Aetherin";
+  src: url("/src/fonts/Aetherin.otf") format("opentype");
+  font-weight: normal;
+  font-style: normal;
+}
+
+@font-face{
+  font-family: "RunyTunes";
+  src: url("/src/fonts/RunyTunes.otf") format("opentype");
+  font-weight: normal;
+  font-style: normal;
+}
+
+@font-face{
+  font-family: "Religath";
+  src: url("/src/fonts/religath.otf") format("opentype");
+  font-weight: normal;
+  font-style: normal;
+}
+
+@font-face{
+  font-family: "itc-benguiat-std-book";
+  src: url("/src/fonts/itc-benguiat-std/ITCBenguiatStdBookCn.OTF") format("opentype");
+  font-weight: normal;
+  font-style: normal;
+}
+
+@font-face{
+  font-family: "itc-benguiat-std-bold";
+  src: url("/src/fonts/itc-benguiat-std/ITCBenguiatStdBoldCn.OTF") format("opentype");
+  font-weight: normal;
+  font-style: normal;
+}
+
 :root {
   font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;

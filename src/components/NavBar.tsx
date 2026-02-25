@@ -1,33 +1,73 @@
 import { useEffect, useState } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import type { CSSProperties } from "react";
 
-function NavLink({ children, onClick }: { children: string; onClick?: () => void }) {
-  const [isHovered, setIsHovered] = useState(false);
 
+function NavLink({
+  children,
+  to,
+  onClick,
+}: {
+  children: string;
+  to?: string;
+  onClick?: () => void;
+}) {
+  const [isHovered, setIsHovered] = useState(false);
+  const location = useLocation();
+
+  const isActive = to ? location.pathname === to : false;
+  const underlineWidth = isHovered || isActive ? "100%" : "0%";
+
+  const sharedStyles: CSSProperties = {
+    position: "relative",
+    display: "inline-block",
+    cursor: "pointer",
+    textDecoration: "none",
+    color: "inherit",
+    pointerEvents: "auto",
+  };
+
+  const underlineStyles: CSSProperties = {
+    position: "absolute",
+    bottom: "-4px",
+    left: 0,
+    height: "1px",
+    backgroundColor: "white",
+    width: underlineWidth,
+    transition: "width 0.3s ease",
+  };
+
+  // Button-like link (no route), for custom actions
+  if (!to) {
+    return (
+      <div
+        style={sharedStyles}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+        onClick={onClick}
+        role="button"
+        tabIndex={0}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") onClick?.();
+        }}
+      >
+        <span style={link}>{children}</span>
+        <div style={underlineStyles} />
+      </div>
+    );
+  }
+  // Normal route navigation
   return (
-    <div
-      style={{
-        position: "relative",
-        display: "inline-block",
-        cursor: "pointer",
-      }}
+    <Link
+      to={to}
+      style={sharedStyles}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       onClick={onClick}
     >
       <span style={link}>{children}</span>
-      <div
-        style={{
-          position: "absolute",
-          bottom: "-4px",
-          left: 0,
-          height: "1px",
-          backgroundColor: "white",
-          width: isHovered ? "100%" : "0%",
-          transition: "width 0.3s ease",
-        }}
-      />
-    </div>
+      <div style={underlineStyles} />
+    </Link>
   );
 }
 
@@ -35,33 +75,42 @@ export default function NavBar({ onAdminClick }: { onAdminClick?: () => void }) 
   const [isMobile, setIsMobile] = useState(() => window.innerWidth <= 768);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
+  const navigate = useNavigate();
+  const location = useLocation();
+  const goHome = () => {
+  setIsMenuOpen(false);
+
+  if (location.pathname !== "/") {
+    navigate("/");
+
+    // wait for route change, then scroll
+    setTimeout(() => {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }, 50);
+  } else {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+};
+
   useEffect(() => {
     const onResize = () => {
       const mobile = window.innerWidth <= 768;
       setIsMobile(mobile);
-      if (!mobile) {
-        setIsMenuOpen(false);
-      }
+      if (!mobile) setIsMenuOpen(false);
     };
 
     window.addEventListener("resize", onResize);
     return () => window.removeEventListener("resize", onResize);
   }, []);
 
-  const handleBrandClick = () => {
-    const heroSection = document.getElementById("hero");
-    if (heroSection) {
-      heroSection.scrollIntoView({ behavior: "smooth" });
-    }
-    setIsMenuOpen(false);
-  };
+  const closeMenu = () => setIsMenuOpen(false);
 
   return (
     <nav style={nav}>
       <div style={navInner}>
-        <span style={{ ...brand, cursor: "pointer" }} onClick={handleBrandClick}>
-          EMILY
-        </span>
+        {/* EMILY → "/" (or scroll to hero if already on "/") */}
+        <NavLink onClick={goHome}>EMILY</NavLink>
+
         {isMobile ? (
           <button
             type="button"
@@ -76,11 +125,20 @@ export default function NavBar({ onAdminClick }: { onAdminClick?: () => void }) 
           </button>
         ) : (
           <div style={rightGroup}>
-            <NavLink>WORKS</NavLink>
-            <NavLink>PLAYGROUND</NavLink>
-            <NavLink>ABOUT</NavLink>
+            {/* WORKS → "/" (or scroll to hero if already on "/") */}
+            <NavLink onClick={goHome}>WORKS</NavLink>
+
+            <NavLink to="/playground">PLAYGROUND</NavLink>
+            <NavLink to="/about">ABOUT</NavLink>
+
             {import.meta.env.DEV && (
-              <NavLink onClick={onAdminClick}>ADMIN</NavLink>
+              <NavLink
+                onClick={() => {
+                  onAdminClick?.();
+                }}
+              >
+                ADMIN
+              </NavLink>
             )}
           </div>
         )}
@@ -88,14 +146,27 @@ export default function NavBar({ onAdminClick }: { onAdminClick?: () => void }) 
 
       {isMobile && (
         <div style={{ ...mobileMenu, ...(isMenuOpen ? mobileMenuOpen : mobileMenuClosed) }}>
-          <NavLink onClick={() => setIsMenuOpen(false)}>WORKS</NavLink>
-          <NavLink onClick={() => setIsMenuOpen(false)}>PLAYGROUND</NavLink>
-          <NavLink onClick={() => setIsMenuOpen(false)}>ABOUT</NavLink>
+          <NavLink
+            onClick={() => {
+              goHome();
+            }}
+          >
+            WORKS
+          </NavLink>
+
+          <NavLink to="/playground" onClick={closeMenu}>
+            PLAYGROUND
+          </NavLink>
+
+          <NavLink to="/about" onClick={closeMenu}>
+            ABOUT
+          </NavLink>
+
           {import.meta.env.DEV && (
             <NavLink
               onClick={() => {
                 onAdminClick?.();
-                setIsMenuOpen(false);
+                closeMenu();
               }}
             >
               ADMIN
@@ -124,16 +195,13 @@ const navInner: CSSProperties = {
   alignItems: "center",
   justifyContent: "space-between",
   fontFamily: '"Space Grotesk", sans-serif',
-  fontSize: "14px",
+  fontSize: "1rem",
   letterSpacing: "0.2em",
   textTransform: "uppercase",
   color: "white",
+  opacity: 0.8,
   gap: "0.5rem",
   pointerEvents: "auto",
-};
-
-const brand: CSSProperties = {
-  fontWeight:400,
 };
 
 const rightGroup: CSSProperties = {
@@ -149,12 +217,13 @@ const menuButton: CSSProperties = {
   flexDirection: "column",
   justifyContent: "center",
   alignItems: "center",
-  gap: "6px",
+  gap: "4px",
   background: "transparent",
   border: "none",
   borderRadius: "8px",
   color: "white",
   cursor: "pointer",
+  pointerEvents: "auto",
 };
 
 const menuLine: CSSProperties = {
