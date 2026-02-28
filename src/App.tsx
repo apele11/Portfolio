@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Home from "./home/page";
 import About from "./about/page";
 import Playground from "./playground/page";
+import ProjectPage from "./projects/page";
 
 export default function App() {
   return (
@@ -10,6 +11,7 @@ export default function App() {
         <Route path="/" element={<Home />} />
         <Route path="/about" element={<About />} />
         <Route path="/playground" element={<Playground />} />
+        <Route path="/projects/:projectId" element={<ProjectPage />} />
       </Routes>
     </BrowserRouter>
   )

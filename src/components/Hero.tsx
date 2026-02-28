@@ -136,7 +136,7 @@ const heading: CSSProperties = {
 
 const paragraph: CSSProperties = {
   fontSize: "16px",
-  fontFamily: "Space Grotesk, sans-serif",
+  fontFamily: '"Space Grotesk", sans-serif',
   opacity: 0.9,
   lineHeight: 1.6,
   margin: 0,

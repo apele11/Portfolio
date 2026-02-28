@@ -41,8 +41,14 @@ interface ShaderUniforms {
  */
 export default function HeroBackground({
   uniformsRef,
+  fixed = true,
+  className,
+  colors,
 }: {
   uniformsRef?: React.Ref<ShaderUniforms | null>;
+  fixed?: boolean;
+  className?: string;
+  colors?: [string, string, string, string];
 } = {}) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
@@ -68,10 +74,10 @@ export default function HeroBackground({
       uFlowTime: { value: 0 },
       uRes: { value: new THREE.Vector2(1, 1) },
       uMouse: { value: new THREE.Vector2(0.5, 0.5) },
-      uColor1: { value: new THREE.Color("#260b54").convertSRGBToLinear() },
-      uColor2: { value: new THREE.Color("#095f75").convertSRGBToLinear() },
-      uColor3: { value: new THREE.Color("#2b716b").convertSRGBToLinear() },
-      uColor4: { value: new THREE.Color("#a9a2d7").convertSRGBToLinear() },
+      uColor1: { value: new THREE.Color(colors?.[0] ?? "#260b54").convertSRGBToLinear() },
+      uColor2: { value: new THREE.Color(colors?.[1] ?? "#095f75").convertSRGBToLinear() },
+      uColor3: { value: new THREE.Color(colors?.[2] ?? "#2b716b").convertSRGBToLinear() },
+      uColor4: { value: new THREE.Color(colors?.[3] ?? "#a9a2d7").convertSRGBToLinear() },
     };
 
     if (uniformsRef && typeof uniformsRef === 'object' && 'current' in uniformsRef) {
@@ -192,8 +198,9 @@ void main(){
        * Maintains proper aspect ratio and pixel ratio for high DPI displays
        * @private
        */
-      const w = window.innerWidth;
-      const h = window.innerHeight;
+      const parent = canvas.parentElement;
+      const w = fixed ? window.innerWidth : (parent?.clientWidth ?? window.innerWidth);
+      const h = fixed ? window.innerHeight : (parent?.clientHeight ?? window.innerHeight);
       renderer.setSize(w, h, false);
       uniforms.uRes.value.set(w, h);
     };
@@ -218,9 +225,20 @@ void main(){
        * @param {PointerEvent} e - Pointer event from mouse/touch movement
        * @private
        */
+      if (fixed) {
+        mouseTarget.set(
+          e.clientX / window.innerWidth,
+          1 - e.clientY / window.innerHeight
+        );
+        return;
+      }
+
+      const rect = canvas.getBoundingClientRect();
+      const x = (e.clientX - rect.left) / Math.max(rect.width, 1);
+      const y = (e.clientY - rect.top) / Math.max(rect.height, 1);
       mouseTarget.set(
-        e.clientX / window.innerWidth,
-        1 - e.clientY / window.innerHeight
+        Math.min(Math.max(x, 0), 1),
+        1 - Math.min(Math.max(y, 0), 1)
       );
     };
 
@@ -285,14 +303,14 @@ void main(){
       material.dispose();
       renderer.dispose();
     };
-  }, [uniformsRef]);
+  }, [uniformsRef, fixed, colors]);
 
   return (
     <canvas
       ref={canvasRef}
-      className="bg-canvas"
+      className={className ?? "bg-canvas"}
       style={{
-        position: "fixed",
+        position: fixed ? "fixed" : "absolute",
         top: 0,
         left: 0,
         width: "100%",

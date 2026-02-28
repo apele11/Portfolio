@@ -1,18 +1,18 @@
 import { useRef, useState, useEffect } from "react";
-import HeroBackground from "../components/HeroBackground";
+import { useNavigate } from "react-router-dom";
+import HeroBackground from "../components/FragmentShader";
 import Hero from "../components/Hero";
 import NavBar from "../components/NavBar";
 import Projects from "../components/Projects";
 import Admin from "../components/Admin";
-import ProjectPage from "../projects/page";
 import { testConnection } from "../firebase";
 
 
 export default function Home() {
   const uniformsRef = useRef(null);
+  const navigate = useNavigate();
   const [showProjects, setShowProjects] = useState(true);
   const [showAdmin, setShowAdmin] = useState(false);
-  const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
 
   useEffect(() => {
     // Test Firebase connection on app load
@@ -38,11 +38,7 @@ export default function Home() {
   }, []);
 
   const handleProjectSelect = (projectId: string) => {
-    setSelectedProjectId(projectId);
-  };
-
-  const handleBackFromProject = () => {
-    setSelectedProjectId(null);
+    navigate(`/projects/${projectId}`);
   };
 
   return (
@@ -57,15 +53,9 @@ export default function Home() {
           <HeroBackground uniformsRef={uniformsRef} />
           </div>
             <Hero uniformsRef={uniformsRef} />
-          {!selectedProjectId && <NavBar onAdminClick={() => setShowAdmin(true)} />}
+          <NavBar onAdminClick={() => setShowAdmin(true)} />
           <div style={{ position: "relative", zIndex: 2, marginTop: "100vh" }}>
-            {selectedProjectId ? (
-              <ProjectPage
-                projectId={selectedProjectId}
-                onBack={handleBackFromProject}
-                onAdminClick={() => setShowAdmin(true)}
-              />
-            ) : showProjects ? (
+            {showProjects ? (
               <Projects uniformsRef={uniformsRef} onProjectSelect={handleProjectSelect} />
             ) : null}
           </div>

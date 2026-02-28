@@ -1,5 +1,5 @@
 import NavBar from "../components/NavBar";
-import HeroBackground from "../components/HeroBackground";
+import HeroBackground from "../components/FragmentShader";
 
 export default function AboutPage() {
   return (

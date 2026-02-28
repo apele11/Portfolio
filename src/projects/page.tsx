@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import NavBar from "../components/NavBar";
 import { fetchProjectById } from "../data/projects";
 import { getProjectLayout } from "../data/registry";
@@ -6,17 +7,28 @@ import type { ProjectDetail } from "../types/project";
 import "./styles.css";
 
 interface ProjectPageProps {
-	projectId: string;
-	onBack: () => void;
+	projectId?: string;
+	onBack?: () => void;
 	onAdminClick?: () => void;
 }
 
 export default function ProjectPage({ projectId, onBack, onAdminClick }: ProjectPageProps) {
+	const params = useParams<{ projectId: string }>();
+	const navigate = useNavigate();
+	const resolvedProjectId = projectId ?? params.projectId;
+	const handleBack = onBack ?? (() => navigate(-1));
 	const [project, setProject] = useState<ProjectDetail | null>(null);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
 
 	useEffect(() => {
+		if (!resolvedProjectId) {
+			setError("Project not found");
+			setProject(null);
+			setLoading(false);
+			return;
+		}
+
 		let isActive = true;
 
 		const loadProject = async () => {
@@ -24,7 +36,7 @@ export default function ProjectPage({ projectId, onBack, onAdminClick }: Project
 				setLoading(true);
 				setError(null);
 
-				const projectData = await fetchProjectById(projectId);
+				const projectData = await fetchProjectById(resolvedProjectId);
 				if (!isActive) return;
 
 				if (!projectData) {
@@ -52,7 +64,7 @@ export default function ProjectPage({ projectId, onBack, onAdminClick }: Project
 		return () => {
 			isActive = false;
 		};
-	}, [projectId]);
+	}, [resolvedProjectId]);
 
 	if (loading) {
 		return (
@@ -80,7 +92,7 @@ export default function ProjectPage({ projectId, onBack, onAdminClick }: Project
 	return (
 		<>
 			<NavBar onAdminClick={onAdminClick} />
-			<Layout project={project} onBack={onBack} />
+			<Layout project={project} onBack={handleBack} />
 		</>
 	);
 }

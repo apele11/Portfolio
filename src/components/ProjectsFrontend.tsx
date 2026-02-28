@@ -215,7 +215,7 @@ const subtitle: CSSProperties = {
   lineHeight: 1.6,
   color: "rgba(255, 255, 255, 0.85)",
   margin: 0,
-  fontFamily: "Space Grotesk, sans-serif",
+  fontFamily: '"Space Grotesk", sans-serif',
 };
 
 const projectsSection: CSSProperties = {
