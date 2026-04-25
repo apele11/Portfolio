@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { db } from "../firebase.js";
 import { doc, collection, getDocs, setDoc, deleteDoc } from "firebase/firestore";
 import type { ProjectDetail, ProjectSection } from "../types/project";
+import { normalizeProjectDetail } from "../data/projects";
 import "./Admin.css";
 
 export default function Admin({ onClose }: { onClose?: () => void }) {
@@ -24,10 +25,9 @@ export default function Admin({ onClose }: { onClose?: () => void }) {
     const loadProjects = async () => {
       try {
         const projectsSnap = await getDocs(collection(db, "projects"));
-        const projectsList = projectsSnap.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-        })) as ProjectDetail[];
+        const projectsList = projectsSnap.docs.map((doc) => 
+          normalizeProjectDetail(doc.id, doc.data())
+        );
         setProjects(projectsList);
       } catch (error) {
         console.error("Error loading projects:", error);
@@ -259,9 +259,25 @@ function ProjectEditor({
   onRemoveSection,
   loading,
 }: ProjectEditorProps) {
-  const [formData, setFormData] = useState<ProjectDetail>(project);
+  const [formData, setFormData] = useState<ProjectDetail>({
+    ...project,
+    eyebrow: project.eyebrow || "",
+    header: project.header || "",
+    subtitle: project.subtitle || "",
+    fullDescription: project.fullDescription || "",
+    coverUrl: project.coverUrl || "",
+    color1: project.color1 || "#05060a",
+    color2: project.color2 || "#2094C5",
+    color3: project.color3 || "#b4532a",
+    color4: project.color4 || "#d7c8a2",
+    type: project.type || "",
+    date: project.date || "",
+    role: project.role || [],
+    skills: project.skills || [],
+    sections: project.sections || [],
+  });
 
-  const handleFieldChange = (field: keyof ProjectDetail, value: any) => {
+  const handleFieldChange = <K extends keyof ProjectDetail>(field: K, value: ProjectDetail[K]) => {
     setFormData({
       ...formData,
       [field]: value,

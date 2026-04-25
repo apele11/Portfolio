@@ -74,10 +74,10 @@ export default function HeroBackground({
       uFlowTime: { value: 0 },
       uRes: { value: new THREE.Vector2(1, 1) },
       uMouse: { value: new THREE.Vector2(0.5, 0.5) },
-      uColor1: { value: new THREE.Color(colors?.[0] ?? "#260b54").convertSRGBToLinear() },
-      uColor2: { value: new THREE.Color(colors?.[1] ?? "#095f75").convertSRGBToLinear() },
-      uColor3: { value: new THREE.Color(colors?.[2] ?? "#2b716b").convertSRGBToLinear() },
-      uColor4: { value: new THREE.Color(colors?.[3] ?? "#a9a2d7").convertSRGBToLinear() },
+      uColor1: { value: new THREE.Color(colors?.[0] ?? "#260b54") },
+      uColor2: { value: new THREE.Color(colors?.[1] ?? "#095f75") },
+      uColor3: { value: new THREE.Color(colors?.[2] ?? "#2b716b") },
+      uColor4: { value: new THREE.Color(colors?.[3] ?? "#a9a2d7") },
     };
 
     if (uniformsRef && typeof uniformsRef === 'object' && 'current' in uniformsRef) {

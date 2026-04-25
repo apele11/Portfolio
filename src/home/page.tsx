@@ -12,7 +12,6 @@ export default function Home() {
   const uniformsRef = useRef(null);
   const navigate = useNavigate();
   const [showProjects, setShowProjects] = useState(true);
-  const [showAdmin, setShowAdmin] = useState(false);
 
   useEffect(() => {
     // Test Firebase connection on app load
@@ -26,10 +25,10 @@ export default function Home() {
         e.preventDefault();
         setShowProjects((prev) => !prev);
       }
-      // Toggle admin with "Escape" key - only in dev mode
+      // Navigate to admin with "Escape" key - only in dev mode
       if (e.key === "Escape" && import.meta.env.DEV) {
         e.preventDefault();
-        setShowAdmin((prev) => !prev);
+        navigate("/admin");
       }
     };
 
@@ -43,24 +42,16 @@ export default function Home() {
 
   return (
     <>
-      {showAdmin ? (
-        <>
-          <Admin onClose={() => setShowAdmin(false)} />
-        </>
-      ) : (
-        <>
-        <div id={"hero"}>
-          <HeroBackground uniformsRef={uniformsRef} />
-          </div>
-            <Hero uniformsRef={uniformsRef} />
-          <NavBar onAdminClick={() => setShowAdmin(true)} />
-          <div style={{ position: "relative", zIndex: 2, marginTop: "100vh" }}>
-            {showProjects ? (
-              <Projects uniformsRef={uniformsRef} onProjectSelect={handleProjectSelect} />
-            ) : null}
-          </div>
-        </>
-      )}
+      <div id={"hero"}>
+        <HeroBackground uniformsRef={uniformsRef} />
+      </div>
+      <Hero uniformsRef={uniformsRef} />
+      <NavBar />
+      <div style={{ position: "relative", zIndex: 2, marginTop: "100vh" }}>
+        {showProjects ? (
+          <Projects uniformsRef={uniformsRef} onProjectSelect={handleProjectSelect} />
+        ) : null}
+      </div>
     </>
   );
 }

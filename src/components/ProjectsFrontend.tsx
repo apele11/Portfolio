@@ -195,8 +195,9 @@ const eyebrow: CSSProperties = {
   fontWeight: 600,
   letterSpacing: "0.15em",
   textTransform: "uppercase",
-  color: "rgba(255, 200, 100, 0.8)",
+  color: "white",
   margin: 0,
+  textShadow: "0px 2px 4px rgba(0, 0, 0, 0.8), 0px 4px 16px rgba(0, 0, 0, 0.6)",
 };
 
 const title: CSSProperties = {
@@ -208,14 +209,16 @@ const title: CSSProperties = {
   letterSpacing: "0.05em",
   lineHeight: 1.1,
   textTransform: "uppercase",
+  textShadow: "0px 2px 8px rgba(0, 0, 0, 0.8), 0px 6px 24px rgba(0, 0, 0, 0.6)",
 };
 
 const subtitle: CSSProperties = {
   fontSize: "16px",
   lineHeight: 1.6,
-  color: "rgba(255, 255, 255, 0.85)",
+  color: "rgba(255, 255, 255, 0.95)",
   margin: 0,
   fontFamily: '"Space Grotesk", sans-serif',
+  textShadow: "0px 2px 4px rgba(0, 0, 0, 0.8), 0px 4px 16px rgba(0, 0, 0, 0.6)",
 };
 
 const projectsSection: CSSProperties = {

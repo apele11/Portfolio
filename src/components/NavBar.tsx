@@ -71,7 +71,7 @@ function NavLink({
   );
 }
 
-export default function NavBar({ onAdminClick }: { onAdminClick?: () => void }) {
+export default function NavBar() {
   const [isMobile, setIsMobile] = useState(() => window.innerWidth <= 768);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
@@ -132,11 +132,7 @@ export default function NavBar({ onAdminClick }: { onAdminClick?: () => void }) 
             <NavLink to="/about">ABOUT</NavLink>
 
             {import.meta.env.DEV && (
-              <NavLink
-                onClick={() => {
-                  onAdminClick?.();
-                }}
-              >
+              <NavLink to="/admin">
                 ADMIN
               </NavLink>
             )}
@@ -163,12 +159,7 @@ export default function NavBar({ onAdminClick }: { onAdminClick?: () => void }) 
           </NavLink>
 
           {import.meta.env.DEV && (
-            <NavLink
-              onClick={() => {
-                onAdminClick?.();
-                closeMenu();
-              }}
-            >
+            <NavLink to="/admin" onClick={closeMenu}>
               ADMIN
             </NavLink>
           )}

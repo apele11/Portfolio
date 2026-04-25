@@ -44,6 +44,14 @@
   z-index: 0;
 }
 
+.hero-overlay {
+  position: absolute;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.6);
+  z-index: 0;
+  pointer-events: none;
+}
+
 .project-hero-title {
   position: relative;
   z-index: 1;

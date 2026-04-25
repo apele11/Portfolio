@@ -2,17 +2,17 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import NavBar from "../components/NavBar";
 import { fetchProjectById } from "../data/projects";
-import { getProjectLayout } from "../data/registry";
+import DefaultProjectHero from "./layouts/DefaultProjectHero";
+import LockedInProjectLayout from "./layouts/LockedInProjectLayout";
 import type { ProjectDetail } from "../types/project";
 import "./styles.css";
 
 interface ProjectPageProps {
 	projectId?: string;
 	onBack?: () => void;
-	onAdminClick?: () => void;
 }
 
-export default function ProjectPage({ projectId, onBack, onAdminClick }: ProjectPageProps) {
+export default function ProjectPage({ projectId, onBack }: ProjectPageProps) {
 	const params = useParams<{ projectId: string }>();
 	const navigate = useNavigate();
 	const resolvedProjectId = projectId ?? params.projectId;
@@ -69,7 +69,7 @@ export default function ProjectPage({ projectId, onBack, onAdminClick }: Project
 	if (loading) {
 		return (
 			<>
-				<NavBar onAdminClick={onAdminClick} />
+				<NavBar />
 				<div className="project-page">Loading...</div>
 			</>
 		);
@@ -78,7 +78,7 @@ export default function ProjectPage({ projectId, onBack, onAdminClick }: Project
 	if (error || !project) {
 		return (
 			<>
-				<NavBar onAdminClick={onAdminClick} />
+				<NavBar />
 				<div className="project-page">
 					<div className="error-container">
 						<p>{error}</p>
@@ -88,10 +88,11 @@ export default function ProjectPage({ projectId, onBack, onAdminClick }: Project
 		);
 	}
 
-	const Layout = getProjectLayout(project.id);
+	const isLockedIn = project.header.toLowerCase().includes("lockedin") || project.header.toLowerCase().includes("locked in");
+	const Layout = isLockedIn ? LockedInProjectLayout : DefaultProjectHero;
 	return (
 		<>
-			<NavBar onAdminClick={onAdminClick} />
+			<NavBar />
 			<Layout project={project} onBack={handleBack} />
 		</>
 	);
