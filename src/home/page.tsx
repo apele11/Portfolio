@@ -4,7 +4,6 @@ import HeroBackground from "../components/FragmentShader";
 import Hero from "../components/Hero";
 import NavBar from "../components/NavBar";
 import Projects from "../components/Projects";
-import Admin from "../components/Admin";
 import { testConnection } from "../firebase";
 
 

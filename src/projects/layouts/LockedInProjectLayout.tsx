@@ -521,7 +521,7 @@ export default function LockedInProjectLayout({ project, onBack }: LockedInProje
                   We translated research insights into a practical scenario flow: discover, evaluate, reserve, and stay engaged. These journeys helped us prioritize only the features that directly reduce search friction and support focused study sessions.
                 </p>
                 <figure className="scenario-figure">
-                  <img src="/public/assets/LockedIn/user_scenario.png" alt="User Journey Map" className="full-img" />
+                  <img src="/assets/LockedIn/user_scenario.png" alt="User Scenario" className="full-img" />
                   <figcaption className="scenario-caption">
                     Group study scenario showing how students search for the right space, how local businesses gain visibility, and how gamified features support engagement.
                   </figcaption>
