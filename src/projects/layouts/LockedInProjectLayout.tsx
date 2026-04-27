@@ -119,7 +119,7 @@ export default function LockedInProjectLayout({ project, onBack }: LockedInProje
     },
     {
       name: "Carter Braun",
-      role: "Team member listed in project summary",
+      role: "Market Trends, user research, prototyping, testing",
       contributions: [
         "Analyzed market trends",
         "Conducted user research and testing and catalogued key findings",
