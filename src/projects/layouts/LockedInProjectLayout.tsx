@@ -702,7 +702,26 @@ export default function LockedInProjectLayout({ project, onBack }: LockedInProje
                 <p>
                   This task flow diagram illustrates the user journey through the app, from onboarding to space discovery, booking, and profile engagement. It helped us ensure a logical, intuitive navigation structure that supports our users' goals at every step.
                 </p>
-                <img src="/assets/LockedIn/task-flow.png" alt="Task Flow" className="flow-img" />
+                <div className="figma-embed-wrap">
+                  <iframe
+                    className="figma-embed"
+                    src="https://miro.com/app/live-embed/uXjVGqMXe5A=/?embedMode=view_only_without_ui&moveToViewport=-2344%2C-1453%2C4636%2C2296&embedId=75198281025"
+                    title="LockedIn Task Flow Miro Board"
+                    allow="fullscreen; clipboard-read; clipboard-write"
+                    allowFullScreen
+                  />
+                </div>
+
+                <div className="proto-cta">
+                  <a
+                    href="https://miro.com/app/live-embed/uXjVGqMXe5A=/?embedMode=view_only_without_ui&moveToViewport=-2344%2C-1453%2C4636%2C2296&embedId=75198281025"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="proto-btn"
+                  >
+                    Open Task Flow in Miro ↗
+                  </a>
+                </div>
               </div>
               
             </section>
