@@ -45,7 +45,11 @@ export default function LockedInProjectLayout({ project, onBack }: LockedInProje
         "Prototyped the map overlay section",
       ],
       reflection: [
-        "Reflection text was not included in the source document excerpt for Belinda Morales.",
+        "For this project, I was in charge of finding the other two competitors for the competitor analysis, creating our new affinity diagram, establishing the design requirements, helping create survey questions and helping prototype our app. Searching for competitors was a challenge as there are not many study apps out there that help users find suitable study locations while also including study tools like pomodoro study sessions. Even with this challenge, I was able to find ‘Waitz University’ and ‘Nook - Study Spot Finder.’ ‘Waitz University’ is an app that displays real-time occupancy from a list of universities that have Occuspace. On the other hand, Nook is an app that is campus focused for the University of Washington. With that, both of these apps had features that we were looking to incorporate into our app and being able to see how they worked on other apps allowed us to improve the ideas to match our apps goals and designs.",
+        "Along with this, I was in charge of creating the new affinity diagram. This was a fairly simple task as I was able to take the ideas that we had from our first affinity diagram and create new ones that better fit our users needs. Within this new affinity diagram we had five main sections being, helping users search for ideal study spaces, helping users choose the best study spaces, helping users understand study conditions, helping users study with others and helping users stay motivated. By establishing this new affinity diagram, I was able to create and establish the design requirements with the focus of the users needs.",
+        "Creating the design requirements was not challenging due to the four main groups that were created. These groups being location insights, search and discovery, group and user engagement. Within location insight, our group knew that our app wanted to include noise levels, location crowdedness, floor plans, popular times and a display of the locations operating hours. With the search and discovery section, we wanted to incorporate a popular spots tab that allowed for quick location access, along with quick navigation to locations that fell under favorites, groups, library, quiet and food. Along with this, we wanted to have filter options and the ability to like/favorite locations.",
+        "Within the group section we wanted to include a group calendar display for events and the ability to reserve study spots for either groups or solo. Lastly, under user engagement we wanted to include the ability to update noise and crowd levels, the ability to report noisy tables, Pomodoro study sessions, badges, points collected and a ‘LockedIn’ pet. These were the design requirements that were met, however, we did have a couple requirements such as creating an option to find study buddies near you and displaying both on and off campus locations that we were not able to incorporate into our app. If given more time, these would definitely be features that we would have liked to incorporate.",
+        "Lastly, I was able to help prototype the map overlay of the app. This was definitely the most challenging part as I did not have any prior experience using Figma, therefore, it was a lot of trial and error. I especially had trouble creating components, specifically ones that had various variants to them. I was able to create some versions, but there were definitely easier ways to make these. If given more time for this project, there would be various things I would want to incorporate into the app such as being able to find study buddies and incorporating an off-campus map of study locations, but in the end, this was a great learning experience and I was able to learn various skills that I will be using in the future!",
       ],
     },
     {
@@ -121,7 +125,10 @@ export default function LockedInProjectLayout({ project, onBack }: LockedInProje
         "Conducted interview and user testing",
       ],
       reflection: [
-        "The supplied document does not include Carter Braun’s individual reflection text, so I can’t present it as source-based copy without inventing details.",
+        "Throughout the development of LockedIn, I had a number of roles that spanned all aspects of the design process. Most of my work in the early stages was focused on research (particularly analyzing market trends), but then I pivoted to focusing on user research and user testing. I helped draft many of our survey and interview questions and I also conducted one of our interviews myself. I then analyzed the key data points that Andres identified in order to determine some of the insights from our research to inform our wireframe and prototype design.",
+        "For the most part, all of this amounted to mostly analytical work on the project, and my contributions as far as applying this information to LockedIn’s design were initially limited. However, once we got into the prototyping stage, I discovered that while I was admittedly hopeless when it came to designing wireframes, I actually thoroughly enjoyed making interactive components for our prototype in Figma! I helped set up the functionality for the map and filter systems for our prototype’s first iteration, which took a surprisingly intense amount of boolean logic and variant-swapping wizardry.",
+        "I also helped to draft the tasks for our user testing, and I acted as a facilitator for multiple of our tests. Now that I had worked more on the design side of the project in tandem with research and testing, I was able to directly apply findings from our user testing in a way that I wasn’t quite able to when we did our user research. Overall, the only aspect of the project that I found to be difficult was setting up some of the complicated functionality of our prototype such as the filter, which frankly was more difficult to do via Figma than it would have been if I scripted it directly in HTML.",
+        "Other than that, I wish I was a little more involved with LockedIn’s design earlier on since I ended up enjoying the design aspect more than the research in the end. This project was a fantastic learning experience overall!",
       ],
     },
   ] as const;
@@ -672,11 +679,12 @@ export default function LockedInProjectLayout({ project, onBack }: LockedInProje
                   </a>
                 </div>
               </div>
-              <h3>Flow Diagram</h3>
+              <h3>Task Flow</h3>
               <p>
-                This flow diagram illustrates the user journey through the app, from onboarding to space discovery, booking, and profile engagement. It helped us ensure a logical, intuitive navigation structure that supports our users' goals at every step.
+                This task flow diagram illustrates the user journey through the app, from onboarding to space discovery, booking, and profile engagement. It helped us ensure a logical, intuitive navigation structure that supports our users' goals at every step.
                 </p>
-              <img src="/assets/LockedIn/FLOW-DIAGRAM.png" alt="Flow Diagram" className="flow-img" />
+              <img src="/assets/LockedIn/task-flow.png" alt="Task Flow" className="flow-img" />
+              
             </section>
 
             {/* ══════════════════════════════════════════
