@@ -32,17 +32,19 @@ export default function LockedInProjectLayout({ project, onBack }: LockedInProje
         "Developed portfolio",
       ],
       reflection: [
-        "Reflection text was not included in the source document excerpt for Emily Apel.",
+        "I was primarily in charge of the wireframes and prototyping of this project. At first we had a lot of features and it was difficult to figure out where some of them should go. After the wireframing stage we ended up adding another page to the app to help the user flow. I think adding the check in page made everything in the app come together because it was like a final destination after the user had gone through their primary actions. I particularly enjoyed the research part of this project because it showed me how much planning goes into product design, and really pushed me to think in the shoes of my user before even starting the design. In the interview I conducted I discovered users would be interested in a “report table” and new resources that they were already using to find library occupancy. When prototyping I struggled the most because it was a new process to me. I found that exercise 6 was really helpful in that process, and wish that I had started that sooner. Overall it was a valuable experience that makes me feel stronger in Figma.",
       ],
     },
     {
       name: "Belinda Morales",
       role: "Affinity mapping, requirements, competitor analysis, prototype support",
       contributions: [
+        "Conducted a competitor analysis for Waitz University and Nook - Study Spot Finder",
         "Created new affinity diagram",
-        "Created design requirements",
-        "Established the pros and cons for the first two competitors in the competitor analysis",
-        "Prototyped the map overlay section",
+        "Established design requirements",
+        "Helped create survey questions",
+        "Helped prototype"
+
       ],
       reflection: [
         "For this project, I was in charge of finding the other two competitors for the competitor analysis, creating our new affinity diagram, establishing the design requirements, helping create survey questions and helping prototype our app. Searching for competitors was a challenge as there are not many study apps out there that help users find suitable study locations while also including study tools like pomodoro study sessions. Even with this challenge, I was able to find ‘Waitz University’ and ‘Nook - Study Spot Finder.’ ‘Waitz University’ is an app that displays real-time occupancy from a list of universities that have Occuspace. On the other hand, Nook is an app that is campus focused for the University of Washington. With that, both of these apps had features that we were looking to incorporate into our app and being able to see how they worked on other apps allowed us to improve the ideas to match our apps goals and designs.",
@@ -119,10 +121,10 @@ export default function LockedInProjectLayout({ project, onBack }: LockedInProje
       name: "Carter Braun",
       role: "Team member listed in project summary",
       contributions: [
-        "Conducted market trend analysis",
-        "Analyzed key research takeaways",
-        "Prototype development and demonstration",
-        "Conducted interview and user testing",
+        "Analyzed market trends",
+        "Conducted user research and testing and catalogued key findings",
+        "Assisted in development of interactivity features in prototype",
+        "Created demo of interactive prototype"
       ],
       reflection: [
         "Throughout the development of LockedIn, I had a number of roles that spanned all aspects of the design process. Most of my work in the early stages was focused on research (particularly analyzing market trends), but then I pivoted to focusing on user research and user testing. I helped draft many of our survey and interview questions and I also conducted one of our interviews myself. I then analyzed the key data points that Andres identified in order to determine some of the insights from our research to inform our wireframe and prototype design.",
@@ -403,12 +405,16 @@ export default function LockedInProjectLayout({ project, onBack }: LockedInProje
               <hr />
               <div className="subgroup">
                 <p>
-                  To understand real student behavior, we ran a 20-question survey and conducted interviews with 3 UF students.
+                  To gather information about our target market, we conducted a survey and interviewed 3 UF students.
                 </p>
 
                 <h4 style={{ marginBottom: "8px" }}>Survey</h4>
                 <p>
-                  The survey captured study habits, environment preferences, recurring frustrations, and openness to behavior-change features like reminders and rewards. We collected 29 responses to establish directional patterns before moving into design.
+                  We created a 20-question survey to assess our potential users' demographics, experience with studying, challenges with the current paradigm, goals and motivations, and openness to change.
+                </p>
+                <h4 style={{ marginTop: "24px", marginBottom: "8px" }}>Survey Insights</h4>
+                <p>
+                  We surveyed 29 individuals to gather meaningful data points. The survey and interview findings below informed our requirements and feature priorities.
                 </p>
 
                 <div className="ur-charts">
@@ -463,7 +469,19 @@ export default function LockedInProjectLayout({ project, onBack }: LockedInProje
                     </svg>
                   </div>
                 </div>
+                <h4 style={{ marginTop: "24px", marginBottom: "8px" }}>Interview</h4>
+                <p>
+                  For our interviews, we crafted an 8 question long questionnaire that focused on long-format open-ended responses in order to gather detailed personal testimonials and opinions. All three interviewees were on-campus UF students, each of which having distinctly different areas of study. Many of the key quotes obtained from these interviews were used to inform our personas that were subsequently created.
+                </p>
+
+                <h4 style={{ marginBottom: "8px" }}>Key Quotes</h4>
+                <ul>
+                  <li>"...look for noise levels when checking study locations."</li>
+                  <li>"I don't know if I would [enjoy social features], but I think it would be good for that to be a feature because there's a lot of people that prefer study groups."</li>
+                  <li>"I would want to know if a study spot allows snacks and drinks to be eaten before going there."</li>
+                </ul>
               </div>
+
             </section>
 
             {/* ── USER PERSONAS ── */}
@@ -679,11 +697,13 @@ export default function LockedInProjectLayout({ project, onBack }: LockedInProje
                   </a>
                 </div>
               </div>
-              <h3>Task Flow</h3>
-              <p>
-                This task flow diagram illustrates the user journey through the app, from onboarding to space discovery, booking, and profile engagement. It helped us ensure a logical, intuitive navigation structure that supports our users' goals at every step.
+              <div className="task-flow-block">
+                <h3>Task Flow</h3>
+                <p>
+                  This task flow diagram illustrates the user journey through the app, from onboarding to space discovery, booking, and profile engagement. It helped us ensure a logical, intuitive navigation structure that supports our users' goals at every step.
                 </p>
-              <img src="/assets/LockedIn/task-flow.png" alt="Task Flow" className="flow-img" />
+                <img src="/assets/LockedIn/task-flow.png" alt="Task Flow" className="flow-img" />
+              </div>
               
             </section>
 

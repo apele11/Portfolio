@@ -1443,6 +1443,15 @@ hr {
   text-align: center;
 }
 
+.task-flow-block {
+  margin-top: 40px;
+  margin-bottom: 40px;
+}
+
+.task-flow-block p {
+  margin-bottom: 0;
+}
+
 .flow-img {
   display: block;
   width: min(100%, 1120px);
@@ -1456,6 +1465,11 @@ hr {
 @media (max-width: 640px) {
   .wireframes-grid { grid-template-columns: 1fr; }
   .wf-img { height: 220px; }
+
+  .task-flow-block {
+    margin-top: 28px;
+    margin-bottom: 28px;
+  }
 
   .flow-img {
     margin-top: 16px;
