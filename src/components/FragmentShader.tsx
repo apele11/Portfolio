@@ -22,6 +22,7 @@ interface ShaderUniforms {
   uColor2: { value: THREE.Color };
   uColor3: { value: THREE.Color };
   uColor4: { value: THREE.Color };
+  uColorOffset?: { value: THREE.Vector2 };
 }
 
 /**
@@ -69,19 +70,36 @@ export default function HeroBackground({
     const scene = new THREE.Scene();
     const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
 
+    const targetColors = {
+      uColor1: new THREE.Color(colors?.[0] ?? "#260b54"),
+      uColor2: new THREE.Color(colors?.[1] ?? "#095f75"),
+      uColor3: new THREE.Color(colors?.[2] ?? "#2b716b"),
+      uColor4: new THREE.Color(colors?.[3] ?? "#a9a2d7"),
+    };
+
     const uniforms = {
       uTime: { value: 0 },
       uFlowTime: { value: 0 },
       uRes: { value: new THREE.Vector2(1, 1) },
       uMouse: { value: new THREE.Vector2(0.5, 0.5) },
-      uColor1: { value: new THREE.Color(colors?.[0] ?? "#260b54") },
-      uColor2: { value: new THREE.Color(colors?.[1] ?? "#095f75") },
-      uColor3: { value: new THREE.Color(colors?.[2] ?? "#2b716b") },
-      uColor4: { value: new THREE.Color(colors?.[3] ?? "#a9a2d7") },
+      uColor1: { value: targetColors.uColor1.clone() },
+      uColor2: { value: targetColors.uColor2.clone() },
+      uColor3: { value: targetColors.uColor3.clone() },
+      uColor4: { value: targetColors.uColor4.clone() },
+      uColorOffset: { value: new THREE.Vector2(0, 0) },
     };
 
     if (uniformsRef && typeof uniformsRef === 'object' && 'current' in uniformsRef) {
-      uniformsRef.current = uniforms;
+      uniformsRef.current = {
+        uTime: uniforms.uTime,
+        uFlowTime: uniforms.uFlowTime,
+        uRes: uniforms.uRes,
+        uMouse: uniforms.uMouse,
+        uColor1: { value: targetColors.uColor1 },
+        uColor2: { value: targetColors.uColor2 },
+        uColor3: { value: targetColors.uColor3 },
+        uColor4: { value: targetColors.uColor4 },
+      } as any;
     }
 
     const material = new THREE.ShaderMaterial({
@@ -106,6 +124,7 @@ uniform vec3 uColor1;
 uniform vec3 uColor2;
 uniform vec3 uColor3;
 uniform vec3 uColor4;
+uniform vec2 uColorOffset;
 
 float rand(vec2 p){
   return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453);
@@ -153,7 +172,7 @@ void main(){
   vec2 mouse01 = mix(vec2(0.5), uMouse, 0.2);
 
   // Apply sine feedback warp
-  vec2 w = warpSineFeedback(p, t, mouse01);
+  vec2 w = warpSineFeedback(p + uColorOffset, t, mouse01);
 
   // Create color field
   float field = length(w) / 1.41421356;
@@ -251,6 +270,16 @@ void main(){
     const driveGain = 1.2;
     const flowSpeed = 0.5;
 
+    const colorOffset = new THREE.Vector2(0, 0);
+    const colorOffsetVelocity = new THREE.Vector2(0, 0);
+
+    const colorDistSq = (c1: THREE.Color, c2: THREE.Color) => {
+      const dr = c1.r - c2.r;
+      const dg = c1.g - c2.g;
+      const db = c1.b - c2.b;
+      return dr * dr + dg * dg + db * db;
+    };
+
     const tick = () => {
       /**
        * Main animation loop executed every frame
@@ -266,7 +295,7 @@ void main(){
        * @returns {void}
        */
       const now = performance.now();
-      const dt = (now - last) / 1000;
+      const dt = Math.min((now - last) / 1000, 0.1); // Cap dt to avoid spikes on tab focus
       last = now;
 
       const alphaMouse = 1 - Math.exp(-dt / tauMouse);
@@ -281,9 +310,46 @@ void main(){
       const alphaDrive = 1 - Math.exp(-dt / tauDrive);
       drive += (driveTarget - drive) * alphaDrive;
 
+      // Calculate color difference between current shader colors and target colors
+      let colorDiff = 0;
+      colorDiff += colorDistSq(uniforms.uColor1.value, targetColors.uColor1);
+      colorDiff += colorDistSq(uniforms.uColor2.value, targetColors.uColor2);
+      colorDiff += colorDistSq(uniforms.uColor3.value, targetColors.uColor3);
+      colorDiff += colorDistSq(uniforms.uColor4.value, targetColors.uColor4);
+
+      // Smoothly lerp the shader colors to target colors
+      const colorLerpSpeed = 2.5; // Smooth transition rate
+      const alphaColor = 1 - Math.exp(-dt * colorLerpSpeed);
+      uniforms.uColor1.value.lerp(targetColors.uColor1, alphaColor);
+      uniforms.uColor2.value.lerp(targetColors.uColor2, alphaColor);
+      uniforms.uColor3.value.lerp(targetColors.uColor3, alphaColor);
+      uniforms.uColor4.value.lerp(targetColors.uColor4, alphaColor);
+
+      // Boost the flow animation slightly during color transitions
       if (!reduceMotion) {
-        flowTime += dt * flowSpeed * drive;
+        const transitionBoost = Math.min(2.0, colorDiff * 4.0);
+        flowTime += dt * flowSpeed * (drive + transitionBoost);
       }
+
+      // Spring physics for the position offset
+      // Push force is proportional to the color difference
+      const k = 10.0;     // stiffness
+      const c = 3.5;     // damping
+      
+      // Push in a diagonal direction when color shifts
+      const pushX = colorDiff * 0.15;
+      const pushY = colorDiff * 0.08;
+      
+      const ax = pushX - k * colorOffset.x - c * colorOffsetVelocity.x;
+      const ay = pushY - k * colorOffset.y - c * colorOffsetVelocity.y;
+      
+      colorOffsetVelocity.x += ax * dt;
+      colorOffsetVelocity.y += ay * dt;
+      
+      colorOffset.x += colorOffsetVelocity.x * dt;
+      colorOffset.y += colorOffsetVelocity.y * dt;
+      
+      uniforms.uColorOffset.value.copy(colorOffset);
 
       uniforms.uFlowTime.value = flowTime;
       uniforms.uTime.value = now / 1000;

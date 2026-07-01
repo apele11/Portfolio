@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef, type RefObject } from "react";
 import type { CSSProperties } from "react";
-import ColorExtractor from "./ColorExtractor";
 import * as THREE from "three";
 
 interface ShaderUniforms {
@@ -38,29 +37,65 @@ export default function ProjectsFrontend({
   const [visibleProjectId, setVisibleProjectId] = useState<string | null>(null);
   const sectionRefs = useRef<{ [key: string]: HTMLElement | null }>({});
 
-  // Use Intersection Observer to detect when sections are in view
+  // Use scroll event listener with requestAnimationFrame to detect the active section
   useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            const projectId = entry.target.getAttribute("data-project-id");
-            console.log("Project visible:", projectId);
-            if (projectId) {
-              setVisibleProjectId(projectId);
-            }
-          }
-        });
-      },
-      { threshold: 0.3 } // Trigger when 30% of section is visible
-    );
+    let ticking = false;
 
+    const handleScroll = () => {
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          // If the scroll position is in the upper half of the Hero section,
+          // treat the Hero section as the active view
+          if (window.scrollY < window.innerHeight * 0.5) {
+            setVisibleProjectId("hero");
+            ticking = false;
+            return;
+          }
+
+          const centerY = window.innerHeight / 2;
+          let activeId: string | null = null;
+          let minDistance = Infinity;
+
+          Object.entries(sectionRefs.current).forEach(([projectId, element]) => {
+            if (!element) return;
+            const rect = element.getBoundingClientRect();
+            const sectionCenter = rect.top + rect.height / 2;
+            const distance = Math.abs(sectionCenter - centerY);
+
+            if (distance < minDistance) {
+              minDistance = distance;
+              activeId = projectId;
+            }
+          });
+
+          if (activeId) {
+            setVisibleProjectId(activeId);
+          }
+          ticking = false;
+        });
+        ticking = true;
+      }
+    };
+
+    // Run immediately to detect active project on mount
+    handleScroll();
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    window.addEventListener("resize", handleScroll);
+
+    // Also watch for any dynamic layout shifts using a ResizeObserver
+    const resizeObserver = new ResizeObserver(handleScroll);
     Object.values(sectionRefs.current).forEach((ref) => {
-      if (ref) observer.observe(ref);
+      if (ref) resizeObserver.observe(ref);
     });
 
-    return () => observer.disconnect();
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+      window.removeEventListener("resize", handleScroll);
+      resizeObserver.disconnect();
+    };
   }, [projects.length]);
+
   if (loading) {
     return (
       <section style={projectsSection}>
@@ -83,6 +118,15 @@ export default function ProjectsFrontend({
 
   return (
     <>
+      {/* If we are in the Hero section (top of the page), restore the Hero's default colors */}
+      {uniformsRef && (
+        <UpdateColorsScript
+          uniformsRef={uniformsRef}
+          colors={["#19053d", "#2f7687", "#40aba2", "#6c6597"]}
+          isVisible={visibleProjectId === "hero" || visibleProjectId === null}
+        />
+      )}
+
       {projects.map((project) => (
         <section
           key={project.id}
@@ -93,25 +137,17 @@ export default function ProjectsFrontend({
           style={{ ...fullScreenProjectSection, cursor: "pointer" }}
           onClick={() => onProjectSelect?.(project.id)}
         >
-          {/* Use project colors if defined, otherwise extract from image */}
-          {uniformsRef && visibleProjectId === project.id && (
-            <>
-              {project.color1 && project.color2 && project.color3 && project.color4 ? (
-                // Use manually selected colors
-                <UpdateColorsScript
-                  uniformsRef={uniformsRef}
-                  colors={[project.color1, project.color2, project.color3, project.color4]}
-                />
-              ) : (
-                // Fall back to color extraction
-                <ColorExtractor
-                  imageUrl={project.coverUrl}
-                  uniformsRef={uniformsRef}
-                  isVisible={true}
-                  projectId={project.id}
-                />
-              )}
-            </>
+          {/* Use project colors if defined, otherwise fall back to hero base colors */}
+          {uniformsRef && (
+            <UpdateColorsScript
+              uniformsRef={uniformsRef}
+              colors={
+                project.color1 && project.color2 && project.color3 && project.color4
+                  ? [project.color1, project.color2, project.color3, project.color4]
+                  : ["#19053d", "#2f7687", "#40aba2", "#6c6597"]
+              }
+              isVisible={visibleProjectId === project.id}
+            />
           )}
 
           {/* Background Image */}
@@ -136,12 +172,14 @@ export default function ProjectsFrontend({
 function UpdateColorsScript({
   uniformsRef,
   colors,
+  isVisible,
 }: {
   uniformsRef: RefObject<ShaderUniforms | null>;
   colors: [string, string, string, string];
+  isVisible: boolean;
 }) {
   useEffect(() => {
-    if (uniformsRef.current) {
+    if (isVisible && uniformsRef.current) {
       colors.forEach((hexColor, index) => {
         const colorKey = `uColor${index + 1}` as keyof ShaderUniforms;
         if (uniformsRef.current && colorKey in uniformsRef.current) {
@@ -153,7 +191,7 @@ function UpdateColorsScript({
       });
       console.log("Updated project colors:", colors);
     }
-  }, [colors, uniformsRef]);
+  }, [colors, uniformsRef, isVisible]);
 
   return null; // This component doesn't render anything
 }
