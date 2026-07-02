@@ -20,6 +20,7 @@ export interface ProjectDetail {
   skills: string[]; // ["Unity 3D", "React", ...]
   date: string; // "March, 2022"
   sections: ProjectSection[];
+  order?: number;
 }
 
 export interface Project {
@@ -32,4 +33,5 @@ export interface Project {
   color2?: string;
   color3?: string;
   color4?: string;
+  order?: number;
 }

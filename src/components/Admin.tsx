@@ -28,6 +28,7 @@ export default function Admin({ onClose }: { onClose?: () => void }) {
         const projectsList = projectsSnap.docs.map((doc) => 
           normalizeProjectDetail(doc.id, doc.data())
         );
+        projectsList.sort((a, b) => (a.order || 0) - (b.order || 0));
         setProjects(projectsList);
       } catch (error) {
         console.error("Error loading projects:", error);
@@ -68,9 +69,41 @@ export default function Admin({ onClose }: { onClose?: () => void }) {
       skills: [],
       date: new Date().toLocaleDateString(),
       sections: [],
+      order: projects.length, // Assign default order
     };
     setSelectedProject(newProject);
     setEditMode(true);
+  };
+
+  const handleMoveProject = async (index: number, direction: "up" | "down") => {
+    if (direction === "up" && index === 0) return;
+    if (direction === "down" && index === projects.length - 1) return;
+
+    const newIndex = direction === "up" ? index - 1 : index + 1;
+    const newProjects = [...projects];
+
+    // Swap the projects in the array
+    const temp = newProjects[index];
+    newProjects[index] = newProjects[newIndex];
+    newProjects[newIndex] = temp;
+
+    // Update the 'order' field for both projects
+    newProjects[index].order = index;
+    newProjects[newIndex].order = newIndex;
+
+    setProjects(newProjects);
+
+    try {
+      setLoading(true);
+      // Save changes to Firestore
+      await setDoc(doc(db, "projects", newProjects[index].id), { ...newProjects[index] }, { merge: true });
+      await setDoc(doc(db, "projects", newProjects[newIndex].id), { ...newProjects[newIndex] }, { merge: true });
+    } catch (error) {
+      console.error("Error updating project order:", error);
+      alert("Failed to update project order");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleEditProject = (project: ProjectDetail) => {
@@ -196,13 +229,29 @@ export default function Admin({ onClose }: { onClose?: () => void }) {
             <p>Loading...</p>
           ) : (
             <div className="projects-grid">
-              {projects.map((project) => (
+              {projects.map((project, index) => (
                 <div key={project.id} className="project-card">
                   <img src={project.coverUrl} alt={project.header} />
                   <div className="project-info">
                     <h3>{project.header}</h3>
                     <p>{project.subtitle}</p>
-                    <div className="project-actions">
+                    <div className="project-actions" style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                      <button
+                        onClick={() => handleMoveProject(index, "up")}
+                        disabled={index === 0}
+                        className="btn-secondary"
+                        style={{ padding: '4px 8px', fontSize: '12px' }}
+                      >
+                        ↑
+                      </button>
+                      <button
+                        onClick={() => handleMoveProject(index, "down")}
+                        disabled={index === projects.length - 1}
+                        className="btn-secondary"
+                        style={{ padding: '4px 8px', fontSize: '12px' }}
+                      >
+                        ↓
+                      </button>
                       <button
                         onClick={() => handleEditProject(project)}
                         className="btn-secondary"

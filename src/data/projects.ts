@@ -59,6 +59,7 @@ export function normalizeProjectDetail(projectId: string, rawData: unknown): Pro
     skills: toStringArray(data.skills),
     date: toString(data.date),
     sections: toProjectSections(data.sections, projectId),
+    order: typeof data.order === "number" ? data.order : 0,
   };
 }
 

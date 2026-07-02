@@ -3,6 +3,7 @@ import { db } from "../firebase";
 import { collection, onSnapshot } from "firebase/firestore";
 import ProjectsFrontend, { type Project } from "./ProjectsFrontend";
 import * as THREE from "three";
+import { PLAYGROUND_ITEMS } from "../data/playground";
 
 interface ShaderUniforms {
   uColor1: { value: THREE.Color };
@@ -32,6 +33,7 @@ export default function Projects({
             ...doc.data(),
           };
         }) as Project[];
+        projectsList.sort((a, b) => (a.order || 0) - (b.order || 0));
         setProjects(projectsList);
         setLoading(false);
       },
@@ -45,11 +47,48 @@ export default function Projects({
   }, []);
 
   return (
-    <ProjectsFrontend
-      projects={projects}
-      loading={loading}
-      uniformsRef={uniformsRef}
-      onProjectSelect={onProjectSelect}
-    />
+    <>
+      <ProjectsFrontend
+        projects={projects}
+        loading={loading}
+        uniformsRef={uniformsRef}
+        onProjectSelect={onProjectSelect}
+      />
+      {!loading && <PlaygroundPreloader />}
+    </>
+  );
+}
+
+function PlaygroundPreloader() {
+  const iframeItems = PLAYGROUND_ITEMS.filter(
+    (item) => item.type === "iframe" && item.embedUrl
+  );
+
+  return (
+    <div
+      style={{
+        position: "absolute",
+        width: "1px",
+        height: "1px",
+        padding: 0,
+        margin: "-1px",
+        overflow: "hidden",
+        clip: "rect(0, 0, 0, 0)",
+        whiteSpace: "nowrap",
+        border: 0,
+        opacity: 0.01,
+        pointerEvents: "none",
+      }}
+      aria-hidden="true"
+    >
+      {iframeItems.map((item) => (
+        <iframe
+          key={item.id}
+          src={item.embedUrl}
+          title={`preload-${item.title}`}
+          style={{ width: "1px", height: "1px", border: "none" }}
+        />
+      ))}
+    </div>
   );
 }
