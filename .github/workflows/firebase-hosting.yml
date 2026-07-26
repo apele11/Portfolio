@@ -18,11 +18,7 @@ jobs:
       - run: npm ci
       - run: npm run build
 
-      - uses: FirebaseExtended/action-hosting-deploy@v0
-        with:
-          repoToken: ${{ secrets.GITHUB_TOKEN }}
-          firebaseServiceAccount: ""
-          channelId: live
-          projectId: portfolio-cf811
+      - name: Deploy to Firebase Hosting
+        run: npx firebase-tools deploy --only hosting --project portfolio-cf811
         env:
           FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
