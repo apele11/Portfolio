@@ -19,6 +19,7 @@ export interface Project {
   color2?: string;
   color3?: string;
   color4?: string;
+  order?: number;
 }
 
 interface ProjectsFrontendProps {
