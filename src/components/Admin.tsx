@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
 import { db } from "../firebase.js";
 import { doc, collection, getDocs, setDoc, deleteDoc } from "firebase/firestore";
-import type { ProjectDetail, ProjectSection } from "../types/project";
+import type { ProjectDetail } from "../types/project";
 import { normalizeProjectDetail } from "../data/projects";
+import CoverMedia from "./CoverMedia";
 import "./Admin.css";
 
 export default function Admin({ onClose }: { onClose?: () => void }) {
@@ -25,7 +26,7 @@ export default function Admin({ onClose }: { onClose?: () => void }) {
     const loadProjects = async () => {
       try {
         const projectsSnap = await getDocs(collection(db, "projects"));
-        const projectsList = projectsSnap.docs.map((doc) => 
+        const projectsList = projectsSnap.docs.map((doc) =>
           normalizeProjectDetail(doc.id, doc.data())
         );
         projectsList.sort((a, b) => (a.order || 0) - (b.order || 0));
@@ -68,7 +69,6 @@ export default function Admin({ onClose }: { onClose?: () => void }) {
       type: "Solo",
       skills: [],
       date: new Date().toLocaleDateString(),
-      sections: [],
       order: projects.length, // Assign default order
     };
     setSelectedProject(newProject);
@@ -117,7 +117,7 @@ export default function Admin({ onClose }: { onClose?: () => void }) {
     try {
       setLoading(true);
       await setDoc(doc(db, "projects", updatedProject.id), updatedProject);
-      
+
       // Update local state
       const existingIndex = projects.findIndex(p => p.id === updatedProject.id);
       if (existingIndex >= 0) {
@@ -127,7 +127,7 @@ export default function Admin({ onClose }: { onClose?: () => void }) {
       } else {
         setProjects([...projects, updatedProject]);
       }
-      
+
       setEditMode(false);
       setSelectedProject(null);
       alert("Project saved successfully!");
@@ -154,37 +154,6 @@ export default function Admin({ onClose }: { onClose?: () => void }) {
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleAddSection = () => {
-    if (!selectedProject) return;
-    const newSection: ProjectSection = {
-      id: new Date().getTime().toString(),
-      type: "text",
-      content: "",
-    };
-    setSelectedProject({
-      ...selectedProject,
-      sections: [...selectedProject.sections, newSection],
-    });
-  };
-
-  const handleUpdateSection = (sectionId: string, updates: Partial<ProjectSection>) => {
-    if (!selectedProject) return;
-    setSelectedProject({
-      ...selectedProject,
-      sections: selectedProject.sections.map(s =>
-        s.id === sectionId ? { ...s, ...updates } : s
-      ),
-    });
-  };
-
-  const handleRemoveSection = (sectionId: string) => {
-    if (!selectedProject) return;
-    setSelectedProject({
-      ...selectedProject,
-      sections: selectedProject.sections.filter(s => s.id !== sectionId),
-    });
   };
 
   if (!isAuthenticated) {
@@ -231,7 +200,7 @@ export default function Admin({ onClose }: { onClose?: () => void }) {
             <div className="projects-grid">
               {projects.map((project, index) => (
                 <div key={project.id} className="project-card">
-                  <img src={project.coverUrl} alt={project.header} />
+                  <CoverMedia src={project.coverUrl} alt={project.header} />
                   <div className="project-info">
                     <h3>{project.header}</h3>
                     <p>{project.subtitle}</p>
@@ -279,9 +248,6 @@ export default function Admin({ onClose }: { onClose?: () => void }) {
             setEditMode(false);
             setSelectedProject(null);
           }}
-          onAddSection={handleAddSection}
-          onUpdateSection={handleUpdateSection}
-          onRemoveSection={handleRemoveSection}
           loading={loading}
         />
       ) : null}
@@ -293,9 +259,6 @@ interface ProjectEditorProps {
   project: ProjectDetail;
   onSave: (project: ProjectDetail) => void;
   onCancel: () => void;
-  onAddSection: () => void;
-  onUpdateSection: (sectionId: string, updates: Partial<ProjectSection>) => void;
-  onRemoveSection: (sectionId: string) => void;
   loading: boolean;
 }
 
@@ -303,9 +266,6 @@ function ProjectEditor({
   project,
   onSave,
   onCancel,
-  onAddSection,
-  onUpdateSection,
-  onRemoveSection,
   loading,
 }: ProjectEditorProps) {
   const [formData, setFormData] = useState<ProjectDetail>({
@@ -323,7 +283,6 @@ function ProjectEditor({
     date: project.date || "",
     role: project.role || [],
     skills: project.skills || [],
-    sections: project.sections || [],
   });
 
   const handleFieldChange = <K extends keyof ProjectDetail>(field: K, value: ProjectDetail[K]) => {
@@ -396,7 +355,7 @@ function ProjectEditor({
         </div>
 
         <div className="form-group">
-          <label>Cover Image URL</label>
+          <label>Cover URL (image or video)</label>
           <input
             type="text"
             value={formData.coverUrl}
@@ -506,22 +465,6 @@ function ProjectEditor({
         </button>
       </div>
 
-      <div className="editor-section">
-        <h3>Content Sections</h3>
-        {formData.sections.map((section, index) => (
-          <SectionEditor
-            key={section.id}
-            section={section}
-            index={index}
-            onUpdate={onUpdateSection}
-            onRemove={onRemoveSection}
-          />
-        ))}
-        <button onClick={onAddSection} className="btn-secondary">
-          Add Section
-        </button>
-      </div>
-
       <div className="editor-actions">
         <button
           onClick={() => onSave(formData)}
@@ -533,67 +476,6 @@ function ProjectEditor({
         <button onClick={onCancel} className="btn-secondary">
           Cancel
         </button>
-      </div>
-    </div>
-  );
-}
-
-interface SectionEditorProps {
-  section: ProjectSection;
-  index: number;
-  onUpdate: (sectionId: string, updates: Partial<ProjectSection>) => void;
-  onRemove: (sectionId: string) => void;
-}
-
-function SectionEditor({ section, index, onUpdate, onRemove }: SectionEditorProps) {
-  return (
-    <div className="section-editor">
-      <div className="section-header">
-        <h4>Section {index + 1}</h4>
-        <button
-          onClick={() => onRemove(section.id)}
-          className="btn-danger-small"
-        >
-          Remove
-        </button>
-      </div>
-
-      <div className="form-group">
-        <label>Type</label>
-        <select
-          value={section.type}
-          onChange={(e) =>
-            onUpdate(section.id, { type: e.target.value as ProjectSection["type"] })
-          }
-        >
-          <option value="text">Text</option>
-          <option value="image">Image</option>
-          <option value="video">Video</option>
-          <option value="html">Custom HTML</option>
-        </select>
-      </div>
-
-      <div className="form-group">
-        <label>
-          {section.type === "text" && "Text Content"}
-          {section.type === "image" && "Image URL"}
-          {section.type === "video" && "Video URL (embed or direct link)"}
-          {section.type === "html" && "Custom HTML"}
-        </label>
-        {section.type === "html" ? (
-          <textarea
-            value={section.content}
-            onChange={(e) => onUpdate(section.id, { content: e.target.value })}
-            placeholder="Enter custom HTML..."
-            rows={6}
-          />
-        ) : (
-          <textarea
-            value={section.content}
-            onChange={(e) => onUpdate(section.id, { content: e.target.value })}
-            rows={4}
-          />
-        )}
       </div>
     </div>
   );

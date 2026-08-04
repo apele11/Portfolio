@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, type RefObject } from "react";
 import type { CSSProperties } from "react";
 import * as THREE from "three";
+import CoverMedia from "./CoverMedia";
 
 interface ShaderUniforms {
   uColor1: { value: THREE.Color };
@@ -151,8 +152,8 @@ export default function ProjectsFrontend({
             />
           )}
 
-          {/* Background Image */}
-          <img
+          {/* Cover — a still or a looping clip, depending on the project */}
+          <CoverMedia
             src={project.coverUrl}
             alt={project.header}
             style={projectImage}

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import type { ProjectDetail } from "../../types/project";
 import DefaultProjectHero from "./DefaultProjectHero";
+import CoverMedia from "../../components/CoverMedia";
 import "./LockedIn.css";
 
 interface LockedInProjectLayoutProps {
@@ -13,10 +14,10 @@ export default function LockedInProjectLayout({ project, onBack }: LockedInProje
   const [activeWireframe, setActiveWireframe] = useState<{ src: string; alt: string; label: string } | null>(null);
 
   const wireframes = [
-    { src: "/assets/LockedIn/WIREFRAME-LOGIN.png", alt: "Login Wireframe", label: "Login" },
-    { src: "/assets/LockedIn/WIREFRAME-MAP.png", alt: "Map Wireframe", label: "Map View" },
-    { src: "/assets/LockedIn/WIREFRAME-CALENDAR.png", alt: "Calendar Wireframe", label: "Calendar" },
-    { src: "/assets/LockedIn/WIREFRAME-PROFILE.png", alt: "Profile Wireframe", label: "Home & Profile" },
+    { src: "/assets/compressed/LockedIn/WIREFRAME-LOGIN.webp", alt: "Login Wireframe", label: "Login" },
+    { src: "/assets/compressed/LockedIn/WIREFRAME-MAP.webp", alt: "Map Wireframe", label: "Map View" },
+    { src: "/assets/compressed/LockedIn/WIREFRAME-CALENDAR.webp", alt: "Calendar Wireframe", label: "Calendar" },
+    { src: "/assets/compressed/LockedIn/WIREFRAME-PROFILE.webp", alt: "Profile Wireframe", label: "Home & Profile" },
   ] as const;
 
   const teamMembers = [
@@ -264,7 +265,7 @@ export default function LockedInProjectLayout({ project, onBack }: LockedInProje
               <div className="subgroup">
                 <div className="market-analysis-grid">
                   <div className="market-map-col">
-                    <img src="/assets/LockedIn/stakeholder.svg" alt="Stakeholder Map" className="full-img" />
+                    <img src="/assets/compressed/LockedIn/stakeholder.svg" alt="Stakeholder Map" className="full-img" />
                   </div>
 
                   <div className="market-text-col">
@@ -546,7 +547,7 @@ export default function LockedInProjectLayout({ project, onBack }: LockedInProje
                   We translated research insights into a practical scenario flow: discover, evaluate, reserve, and stay engaged. These journeys helped us prioritize only the features that directly reduce search friction and support focused study sessions.
                 </p>
                 <figure className="scenario-figure">
-                  <img src="/assets/LockedIn/user_scenario.png" alt="User Scenario" className="full-img" />
+                  <img src="/assets/compressed/LockedIn/user_scenario.webp" alt="User Scenario" className="full-img" />
                   <figcaption className="scenario-caption">
                     Group study scenario showing how students search for the right space, how local businesses gain visibility, and how gamified features support engagement.
                   </figcaption>
@@ -560,13 +561,13 @@ export default function LockedInProjectLayout({ project, onBack }: LockedInProje
                       <p>As a student, I want to quickly find a quiet study space near my current location so that I can start studying immediately without wasting time searching.</p>
                     </div>
                     <div className="rr-gif">
-                      <img src="/assets/LockedIn/gif/MAP-HOME.gif" alt="Map home view" className="rr-img" />
+                      <CoverMedia src="/assets/compressed/LockedIn/MAP-HOME.mp4" alt="Map home view" className="rr-img" />
                     </div>
                   </div>
 
                   <div className="rr-item rr-item-flip">
                     <div className="rr-gif">
-                      <img src="/assets/LockedIn/gif/MAP-FILTER.gif" alt="Map filter" className="rr-img" />
+                      <CoverMedia src="/assets/compressed/LockedIn/MAP-FILTER.mp4" alt="Map filter" className="rr-img" />
                     </div>
                     <div className="rr-text">
                       <div className="journey-step">2</div>
@@ -582,13 +583,13 @@ export default function LockedInProjectLayout({ project, onBack }: LockedInProje
                       <p>As a student, I want to reserve a room for a specific duration and be notified when my time is almost up so that I can manage my study sessions effectively.</p>
                     </div>
                     <div className="rr-gif">
-                      <img src="/assets/LockedIn/gif/CALENDAR-LOCKIN.gif" alt="Lock In session" className="rr-img" />
+                      <CoverMedia src="/assets/compressed/LockedIn/CALENDAR-LOCKIN.mp4" alt="Lock In session" className="rr-img" />
                     </div>
                   </div>
 
                   <div className="rr-item rr-item-flip">
                     <div className="rr-gif">
-                      <img src="/assets/LockedIn/gif/PROFILE.gif" alt="Gator Points profile" className="rr-img" />
+                      <CoverMedia src="/assets/compressed/LockedIn/PROFILE.mp4" alt="Gator Points profile" className="rr-img" />
                     </div>
                     <div className="rr-text">
                       <div className="journey-step">4</div>
@@ -772,13 +773,13 @@ export default function LockedInProjectLayout({ project, onBack }: LockedInProje
                     </ul>
                   </div>
                   <div className="fp-gif">
-                    <img src="/assets/LockedIn/gif/MAP-HOME.gif" alt="Map home view" className="fp-img" />
+                    <CoverMedia src="/assets/compressed/LockedIn/MAP-HOME.mp4" alt="Map home view" className="fp-img" />
                   </div>
                 </div>
 
                 <div className="fp-row fp-row-flip">
                   <div className="fp-gif">
-                    <img src="/assets/LockedIn/gif/MAP-FILTER.gif" alt="Map filter" className="fp-img" />
+                    <CoverMedia src="/assets/compressed/LockedIn/MAP-FILTER.mp4" alt="Map filter" className="fp-img" />
                   </div>
                   <div className="fp-text">
                     <h5 className="dp-heading">Map &amp; Location Data</h5>
@@ -800,13 +801,13 @@ export default function LockedInProjectLayout({ project, onBack }: LockedInProje
                     </ul>
                   </div>
                   <div className="fp-gif">
-                    <img src="/assets/LockedIn/gif/CALENDAR-SCHEDULE.gif" alt="Schedule a booking" className="fp-img" />
+                    <CoverMedia src="/assets/compressed/LockedIn/CALENDAR-SCHEDULE.mp4" alt="Schedule a booking" className="fp-img" />
                   </div>
                 </div>
 
                 <div className="fp-row fp-row-flip">
                   <div className="fp-gif">
-                    <img src="/assets/LockedIn/gif/HOME-POPULAR.gif" alt="Popular spaces" className="fp-img" />
+                    <CoverMedia src="/assets/compressed/LockedIn/HOME-POPULAR.mp4" alt="Popular spaces" className="fp-img" />
                   </div>
                   <div className="fp-text">
                     <h5 className="dp-heading">Gamification System</h5>
@@ -828,7 +829,7 @@ export default function LockedInProjectLayout({ project, onBack }: LockedInProje
                     </ul>
                   </div>
                   <div className="fp-gif">
-                    <img src="/assets/LockedIn/gif/PROFILE.gif" alt="Profile view" className="fp-img" />
+                    <CoverMedia src="/assets/compressed/LockedIn/PROFILE.mp4" alt="Profile view" className="fp-img" />
                   </div>
                 </div>
               </div>

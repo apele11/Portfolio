@@ -1,0 +1,712 @@
+/* ────────────────────────────────────────────────────────────
+   Case-study skeleton — "Editorial × Instrument".
+   Shared by every hardcoded case study via the primitives in
+   src/projects/case-study/. The per-project "skin" is the four
+   colors (--c1..--c4), set on .case-study by CaseStudyLayout from
+   the project's Firebase color1..color4.
+   ──────────────────────────────────────────────────────────── */
+
+.case-study {
+  /* Skin: project colors (fallbacks match DEFAULT_COLORS) */
+  --c1: #05060a;
+  --c2: #2094c5;
+  --c3: #b4532a;
+  --c4: #d7c8a2;
+
+  /* The four project colors come from the CMS unvalidated — this project's --c4 is
+     #000000, which put the pull-quote at 1.03:1 on the dark ground. Text and rules
+     read from these mixed variants instead: pulling each toward the page ink keeps
+     the hue but lifts it clear of the background (--c4 now lands at 4.9:1). */
+  --cs-accent: color-mix(in oklab, var(--c2) 80%, #ece6d8);
+  --cs-accent-warm: color-mix(in oklab, var(--c4) 36%, #ece6d8);
+
+  /* Fixed system: warm, sand-biased neutrals */
+  --cs-ink: #ece6d8;
+  --cs-ink-soft: #b7b1a3;
+  /* Lifted from #7d786d: muted text sits on the raised surface panels too, where
+     the old value fell to 4.39:1. This clears 4.5:1 on both grounds. */
+  --cs-muted: #838073;
+  --cs-hair: rgba(236, 231, 218, 0.11);
+  --cs-surface: #0d0e12;
+
+  /* Distance from the study's content edge to the text column's content edge:
+     rail (132) + column-gap (44) + column padding-left (44). Break-out media
+     measures against this. */
+  --cs-rail: 220px;
+
+  /* Same stacks the project hero uses, so the fold and the study read as one page. */
+  --cs-serif: var(--font-serif);
+  --cs-sans: var(--font-sans);
+  --cs-mono: var(--font-mono);
+
+  background: #070809;
+  font-family: var(--cs-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Spine grid */
+.cs-study {
+  max-width: 1040px;
+  margin: 0 auto;
+  padding: 76px 32px 48px;
+}
+
+/* Each section is its own two-column subgrid so its sticky index is bounded
+   to the section — otherwise every index piles up at the same top offset. */
+.cs-row {
+  display: grid;
+  grid-template-columns: 132px 1fr;
+  column-gap: 44px;
+}
+
+.cs-idx {
+  align-self: start;
+  position: sticky;
+  top: 26px;
+  z-index: 2;
+  font-family: var(--cs-mono);
+}
+
+.cs-idx .cs-n {
+  display: block;
+  font-size: 13px;
+  letter-spacing: 0.05em;
+  color: var(--cs-accent);
+}
+
+.cs-idx .cs-lb {
+  display: block;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--cs-muted);
+  margin-top: 8px;
+}
+
+.cs-col {
+  border-left: 1px solid var(--cs-hair);
+  padding: 0 0 76px 44px;
+  position: relative;
+}
+
+.cs-col::before {
+  content: "";
+  position: absolute;
+  left: -1px;
+  top: 7px;
+  width: 1px;
+  height: 26px;
+  background: var(--cs-accent);
+}
+
+.cs-col-plain::before {
+  display: none;
+}
+
+.cs-col h2 {
+  font-family: var(--cs-serif);
+  font-weight: 500;
+  font-size: clamp(28px, 3.6vw, 38px);
+  line-height: 1.08;
+  letter-spacing: -0.01em;
+  color: #fff;
+  text-wrap: balance;
+  margin: 0 0 22px;
+}
+
+.cs-col h3 {
+  font-family: var(--cs-serif);
+  font-weight: 500;
+  font-size: 20px;
+  color: #fff;
+  margin: 30px 0 12px;
+}
+
+/* Prose defaults are wrapped in :where() so they carry zero specificity. The
+   component rules below (labels, scope lists, the system map) are plain single
+   classes, and without this the generic `.cs-col p` / `.cs-col ul li` selectors
+   silently win against them. */
+:where(.cs-col p) {
+  font-size: 16px;
+  line-height: 1.78;
+  color: var(--cs-ink-soft);
+  max-width: 62ch;
+  margin: 0;
+}
+
+:where(.cs-col p + p) {
+  margin-top: 18px;
+}
+
+.cs-col em {
+  color: var(--cs-ink);
+  font-style: italic;
+  font-family: var(--cs-serif);
+}
+
+.cs-col strong {
+  color: var(--cs-ink);
+  font-weight: 500;
+}
+
+.cs-col code {
+  font-family: var(--cs-mono);
+  font-size: 13px;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 2px 6px;
+  border-radius: 3px;
+  color: var(--cs-accent-warm);
+}
+
+:where(.cs-col ul) {
+  list-style: none;
+  padding: 0;
+  margin: 18px 0 0;
+  max-width: 62ch;
+}
+
+:where(.cs-col ul li) {
+  padding-left: 22px;
+  margin-bottom: 12px;
+  position: relative;
+  font-size: 15.5px;
+  line-height: 1.7;
+  color: var(--cs-ink-soft);
+}
+
+:where(.cs-col ul li)::before {
+  content: "→";
+  position: absolute;
+  left: 0;
+  color: var(--cs-accent);
+}
+
+/* Pull-quote — the editorial "voice", tuned to --c4 */
+.cs-quote {
+  margin: 34px 0 6px;
+  padding-left: 22px;
+  border-left: 2px solid var(--cs-accent-warm);
+}
+
+.cs-quote p {
+  font-family: var(--cs-serif);
+  font-style: italic;
+  font-size: 23px;
+  line-height: 1.45;
+  color: var(--cs-accent-warm);
+  max-width: 28ch;
+}
+
+/* Decision — the "instrument" callout */
+.cs-decision {
+  margin-top: 26px;
+  background: var(--cs-surface);
+  border: 1px solid var(--cs-hair);
+  border-radius: 10px;
+  padding: 20px 22px;
+}
+
+.cs-decision-label {
+  font-family: var(--cs-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--cs-accent);
+  margin: 0 0 11px;
+}
+
+.cs-decision h3 {
+  font-family: var(--cs-serif);
+  font-weight: 500;
+  font-size: 19px;
+  color: #fff;
+  margin: 0 0 9px;
+}
+
+.cs-decision p {
+  font-size: 14.5px;
+  line-height: 1.7;
+  color: var(--cs-ink-soft);
+  max-width: none;
+}
+
+/* Scope — who built what, answered before the reader has to ask */
+.cs-scope {
+  margin-top: 30px;
+  padding: 20px 22px;
+  background: var(--cs-surface);
+  border: 1px solid var(--cs-hair);
+  border-radius: 10px;
+}
+
+.cs-scope-team {
+  font-family: var(--cs-mono);
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  color: var(--cs-ink);
+  margin: 0 0 18px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--cs-hair);
+  max-width: none;
+}
+
+.cs-scope-cols {
+  display: grid;
+  grid-template-columns: 1.15fr 1fr;
+  gap: 26px;
+}
+
+.cs-scope-label {
+  font-family: var(--cs-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--cs-accent);
+  margin: 0 0 11px;
+  max-width: none;
+}
+
+.cs-scope-label-alt {
+  color: var(--cs-muted);
+}
+
+.cs-scope-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  max-width: none;
+}
+
+.cs-scope-list li {
+  position: relative;
+  padding-left: 18px;
+  margin-bottom: 8px;
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--cs-ink);
+}
+
+.cs-scope-list li::before {
+  content: "→";
+  position: absolute;
+  left: 0;
+  color: var(--cs-accent);
+}
+
+/* Others' work is stated plainly, not accented — the contrast is the point. */
+.cs-scope-list-alt li {
+  color: var(--cs-muted);
+}
+
+.cs-scope-list-alt li::before {
+  content: "·";
+  color: var(--cs-muted);
+}
+
+/* System map — shared base → per-instance config → shipped outputs */
+.cs-sysmap-figure {
+  margin-top: 30px;
+}
+
+.cs-sysmap {
+  display: grid;
+  grid-template-columns: 1fr auto 1.25fr auto 0.9fr;
+  align-items: stretch;
+  gap: 14px;
+  padding: 24px 22px;
+  background: var(--cs-surface);
+  border: 1px solid var(--cs-hair);
+  border-radius: 10px;
+}
+
+.cs-sysmap-stage {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+
+.cs-sysmap-label {
+  font-family: var(--cs-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--cs-muted);
+  margin: 0;
+  max-width: none;
+}
+
+.cs-sysmap-arrow {
+  align-self: center;
+  font-family: var(--cs-mono);
+  font-size: 15px;
+  color: var(--cs-accent);
+}
+
+.cs-sysmap-base {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  max-width: none;
+}
+
+.cs-sysmap-base li {
+  padding: 0;
+  margin: 0;
+  font-size: 13px;
+}
+
+.cs-sysmap-base li::before {
+  content: none;
+}
+
+.cs-sysmap-base code {
+  display: block;
+  padding: 7px 10px;
+  border: 1px solid var(--cs-hair);
+  border-left: 2px solid var(--cs-accent);
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--cs-ink);
+  font-size: 12.5px;
+}
+
+.cs-sysmap-varies {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.cs-sysmap-varies dt {
+  font-family: var(--cs-mono);
+  font-size: 12px;
+  color: var(--cs-accent-warm);
+}
+
+.cs-sysmap-varies dd {
+  margin: 2px 0 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--cs-ink-soft);
+}
+
+.cs-sysmap-outputs {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  max-width: none;
+}
+
+.cs-sysmap-outputs li {
+  padding: 7px 8px;
+  margin: 0;
+  border-radius: 4px;
+  border: 1px solid var(--cs-hair);
+  background: rgba(255, 255, 255, 0.03);
+  font-family: var(--cs-mono);
+  font-size: 10.5px;
+  line-height: 1.3;
+  letter-spacing: 0.02em;
+  color: var(--cs-ink-soft);
+}
+
+.cs-sysmap-outputs li::before {
+  content: none;
+}
+
+/* Each output keeps the same skeleton and takes its own palette — the whole
+   argument of the section, encoded in the left edge of the chips. */
+.cs-sysmap-outputs li:nth-child(4n + 1) {
+  border-left: 2px solid color-mix(in oklab, var(--c1) 65%, #ece6d8);
+}
+.cs-sysmap-outputs li:nth-child(4n + 2) {
+  border-left: 2px solid color-mix(in oklab, var(--c2) 65%, #ece6d8);
+}
+.cs-sysmap-outputs li:nth-child(4n + 3) {
+  border-left: 2px solid color-mix(in oklab, var(--c3) 65%, #ece6d8);
+}
+.cs-sysmap-outputs li:nth-child(4n + 4) {
+  border-left: 2px solid color-mix(in oklab, var(--c4) 65%, #ece6d8);
+}
+
+@media (max-width: 900px) {
+  .cs-sysmap {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+
+  .cs-sysmap-arrow {
+    justify-self: start;
+    transform: rotate(90deg);
+  }
+}
+
+/* Learnings */
+.cs-learn-item {
+  padding: 18px 0;
+  border-top: 1px solid var(--cs-hair);
+  max-width: 62ch;
+}
+
+.cs-learn-item:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+
+.cs-learn-item h3 {
+  font-family: var(--cs-serif);
+  font-weight: 500;
+  font-size: 18px;
+  color: #fff;
+  margin: 0 0 6px;
+}
+
+.cs-learn-item p {
+  font-size: 14.5px;
+  line-height: 1.65;
+}
+
+/* CTA */
+.cs-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 30px;
+  padding: 13px 22px;
+  border: 1px solid var(--cs-accent);
+  border-radius: 8px;
+  color: var(--cs-accent);
+  text-decoration: none;
+  font-family: var(--cs-mono);
+  font-size: 12.5px;
+  letter-spacing: 0.06em;
+  transition: background 0.25s, color 0.25s;
+}
+
+.cs-cta:hover {
+  background: var(--cs-accent);
+  color: var(--c1);
+}
+
+.cs-cta span {
+  transition: transform 0.25s;
+}
+
+.cs-cta:hover span {
+  transform: translateX(4px);
+}
+
+/* Media — figures, videos, before/after compares */
+.cs-figure {
+  margin: 30px 0 0;
+}
+
+.cs-figure img,
+.cs-figure video {
+  display: block;
+  width: 100%;
+  height: auto;
+  border: 1px solid var(--cs-hair);
+  border-radius: 10px;
+  background: #000;
+}
+
+.cs-figure figcaption {
+  font-family: var(--cs-mono);
+  font-size: 11.5px;
+  letter-spacing: 0.04em;
+  line-height: 1.5;
+  color: var(--cs-muted);
+  margin-top: 10px;
+}
+
+/* Window onto a full-page capture — the image scrolls inside its own frame so a
+   6,800px screenshot doesn't take over the page. */
+.cs-scrollframe {
+  /* Never taller than most of the viewport — a nested scroll region that fills
+     the screen is one the reader can get stuck inside. */
+  height: min(var(--cs-frame-h, 620px), 72vh);
+  overflow-y: auto;
+  overflow-x: hidden;
+  border: 1px solid var(--cs-hair);
+  border-radius: 10px;
+  background: #000;
+  scrollbar-width: thin;
+  scrollbar-color: var(--cs-muted) transparent;
+}
+
+.cs-figure .cs-scrollframe img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border: 0;
+  border-radius: 0;
+}
+
+.cs-scrollframe:focus-visible {
+  outline: 2px solid var(--cs-accent);
+  outline-offset: 2px;
+}
+
+.cs-media-label {
+  font-family: var(--cs-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--cs-accent);
+  margin: 0 0 9px;
+}
+
+/* ── Media scale ──────────────────────────────────────────────
+   Four widths, so size carries importance instead of every figure
+   landing at the same measure. Ascending: inset < column < wide < bleed. */
+
+/* Reference material: a sketch or a source shot that supports a sentence.
+   Deliberately small — it earns less room than the thing that shipped. */
+.cs-inset {
+  width: min(52%, 420px);
+}
+
+/* Small enough that the frame would dominate the image, so drop it. */
+.cs-figure.cs-inset img,
+.cs-figure.cs-inset video {
+  border: 0;
+  border-radius: 6px;
+}
+
+/* Extends across the rail to the full study width. --cs-rail is the distance
+   from the study's content edge to the text column's: rail (132) + gap (44) +
+   column padding-left (44). */
+.cs-wide {
+  margin-left: calc(-1 * var(--cs-rail));
+  width: calc(100% + var(--cs-rail));
+  max-width: none;
+}
+
+/* Past the spine entirely, for the strongest evidence. The spine is centred on
+   the page, so the extra width is split evenly either side of the wide measure.
+   The max() floor means bleed degrades to exactly `wide` on narrow viewports
+   rather than inverting and becoming the smallest tier. */
+.cs-bleed {
+  --cs-extra: max(0px, calc(min(1320px, 100vw - 48px) - (100% + var(--cs-rail))));
+  margin-left: calc(-1 * var(--cs-rail) - var(--cs-extra) / 2);
+  width: calc(100% + var(--cs-rail) + var(--cs-extra));
+  max-width: none;
+}
+
+/* The bigger the surface, the softer the corner needs to be to read as one. */
+.cs-figure.cs-bleed img,
+.cs-figure.cs-bleed video,
+.cs-bleed .cs-scrollframe {
+  border-radius: 14px;
+}
+
+/* Breathing room scales with emphasis. */
+.cs-inset {
+  margin-top: 24px;
+}
+
+.cs-bleed {
+  margin-top: 46px;
+}
+
+.cs-compare {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+  margin-top: 30px;
+}
+
+.cs-compare .cs-figure {
+  margin: 0;
+}
+
+.cs-embed-frame {
+  position: relative;
+  width: 100%;
+  border: 1px solid var(--cs-hair);
+  border-radius: 10px;
+  overflow: hidden;
+  background: #000;
+}
+
+.cs-embed-frame iframe {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  display: block;
+}
+
+.cs-figure figcaption a {
+  color: var(--cs-accent);
+  text-decoration: none;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.cs-figure figcaption a:hover {
+  border-bottom-color: var(--cs-accent);
+}
+
+@media (max-width: 720px) {
+  .cs-compare {
+    grid-template-columns: 1fr;
+  }
+
+  .cs-scope-cols {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+
+  /* Leave clear page above and below the frame so a touch scroll can get past it. */
+  .cs-scrollframe {
+    height: min(var(--cs-frame-h, 620px), 58vh);
+  }
+}
+
+@media (max-width: 720px) {
+  .cs-study {
+    padding: 52px 24px 40px;
+  }
+
+  .cs-row {
+    grid-template-columns: 1fr;
+    column-gap: 0;
+  }
+
+  .cs-idx {
+    position: static;
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+
+  .cs-idx .cs-lb {
+    margin-top: 0;
+  }
+
+  .cs-col {
+    border-left: 0;
+    padding-left: 0;
+  }
+
+  .cs-col::before {
+    display: none;
+  }
+
+  .cs-wide,
+  .cs-bleed,
+  .cs-inset {
+    margin-left: 0;
+    width: 100%;
+  }
+}

@@ -1,6 +1,6 @@
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "../firebase";
-import type { ProjectDetail, ProjectSection } from "../types/project";
+import type { ProjectDetail } from "../types/project";
 
 const DEFAULT_COLORS = {
   color1: "#05060a",
@@ -16,28 +16,6 @@ function toString(value: unknown, fallback = ""): string {
 function toStringArray(value: unknown): string[] {
   if (!Array.isArray(value)) return [];
   return value.filter((item): item is string => typeof item === "string");
-}
-
-function toProjectSections(value: unknown, projectId: string): ProjectSection[] {
-  if (!Array.isArray(value)) return [];
-
-  return value
-    .map((item, index) => {
-      if (!item || typeof item !== "object") return null;
-
-      const section = item as Record<string, unknown>;
-      const type = section.type;
-      const isValidType = type === "text" || type === "image" || type === "video" || type === "html";
-
-      if (!isValidType) return null;
-
-      return {
-        id: toString(section.id, `${projectId}-section-${index}`),
-        type,
-        content: toString(section.content),
-      } satisfies ProjectSection;
-    })
-    .filter((section): section is ProjectSection => section !== null);
 }
 
 export function normalizeProjectDetail(projectId: string, rawData: unknown): ProjectDetail {
@@ -58,7 +36,6 @@ export function normalizeProjectDetail(projectId: string, rawData: unknown): Pro
     type: toString(data.type),
     skills: toStringArray(data.skills),
     date: toString(data.date),
-    sections: toProjectSections(data.sections, projectId),
     order: typeof data.order === "number" ? data.order : 0,
   };
 }

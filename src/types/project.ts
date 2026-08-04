@@ -1,9 +1,3 @@
-export interface ProjectSection {
-  id: string;
-  type: "text" | "image" | "video" | "html";
-  content: string; // For text, image URL, video URL, or raw HTML
-}
-
 export interface ProjectDetail {
   id: string;
   eyebrow: string;
@@ -19,7 +13,6 @@ export interface ProjectDetail {
   type: string; // "Group", "Solo", etc.
   skills: string[]; // ["Unity 3D", "React", ...]
   date: string; // "March, 2022"
-  sections: ProjectSection[];
   order?: number;
 }
 

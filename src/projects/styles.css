@@ -90,19 +90,22 @@
 
 .title {
   margin: 1rem 0 3rem 0rem;
-  font-family: 'serif';
+  font-family: var(--font-serif);
   text-transform: uppercase;
-  font-size: 4rem;
-  font-weight: 700;
+  font-size: clamp(2.25rem, 5.5vw, 4rem);
+  font-weight: 500;
+  letter-spacing: 0.005em;
   line-height: 1.1;
+  text-wrap: balance;
 }
 
 .subtitle {
   margin: 0;
   font-size: 1.25rem;
-  font-family: "Space Grotesk", sans-serif;
+  font-family: var(--font-sans);
   color: rgba(255, 255, 255, 0.9);
   line-height: 1.5;
+  max-width: 46ch;
 }
 
 .hero-metadata {
@@ -134,9 +137,12 @@
   background-color: rgba(0, 0, 0, 0.3);
 }
 
-.hero-image img {
+.hero-image img,
+.hero-image video {
   width: 100%;
   height: auto;
+  aspect-ratio: 1920 / 1080;
+  object-fit: cover;
   display: block;
 }
 
@@ -189,19 +195,27 @@
 }
 
 /* Responsive */
-@media (max-width: 768px) {
+
+/* Collapse the two-column hero well before the text column gets crushed —
+   at 3fr/4fr the copy was down to ~30 characters a line by 820px. */
+@media (max-width: 960px) {
   .hero-content {
     grid-template-columns: 1fr;
     gap: 40px;
   }
 
+  .project-page-wrap {
+    padding-inline: 2rem;
+  }
+}
+
+@media (max-width: 768px) {
   .hero-metadata {
     grid-template-columns: repeat(2, 1fr);
   }
 
   .title {
     margin-bottom: 2rem;
-    font-size: 32px;
   }
 
   .subtitle {
@@ -230,7 +244,6 @@
 
   .title {
     margin-bottom: 1.5rem;
-    font-size: 24px;
   }
 
   .subtitle {

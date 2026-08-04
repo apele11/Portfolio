@@ -25,3 +25,11 @@ dist-ssr
 
 #Claude
 CLAUDE.md
+**/docs/
+.claude/
+
+# public/assets/ is the drop zone for working originals; only the compressed
+# output is committed. This also stops stray Vite build output (index-*.js,
+# hashed fonts) from being tracked if dist/ is ever copied in here again.
+public/assets/*
+!public/assets/compressed/

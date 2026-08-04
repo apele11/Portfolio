@@ -13,7 +13,7 @@ export interface PlaygroundItem {
 export const PLAYGROUND_ITEMS: PlaygroundItem[] = [
   {
     id: "shader-three",
-    title: "Shader THREE",
+    title: "Displacement Map Shader",
     description: "An interactive WebGL/GLSL shader simulation using Three.js.",
     type: "iframe",
     embedUrl: "https://apele11.github.io/shaderTHREE/?embed=true",

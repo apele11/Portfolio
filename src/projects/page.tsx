@@ -2,8 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import NavBar from "../components/NavBar";
 import { fetchProjectById } from "../data/projects";
-import DefaultProjectHero from "./layouts/DefaultProjectHero";
-import LockedInProjectLayout from "./layouts/LockedInProjectLayout";
+import { resolveProjectLayout } from "../data/registry";
 import type { ProjectDetail } from "../types/project";
 import "./styles.css";
 
@@ -88,8 +87,7 @@ export default function ProjectPage({ projectId, onBack }: ProjectPageProps) {
 		);
 	}
 
-	const isLockedIn = project.header.toLowerCase().includes("lockedin") || project.header.toLowerCase().includes("locked in");
-	const Layout = isLockedIn ? LockedInProjectLayout : DefaultProjectHero;
+	const Layout = resolveProjectLayout(project);
 	return (
 		<>
 			<NavBar />

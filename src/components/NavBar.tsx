@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import type { CSSProperties } from "react";
 
@@ -74,6 +74,8 @@ function NavLink({
 export default function NavBar() {
   const [isMobile, setIsMobile] = useState(() => window.innerWidth <= 768);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isVisible, setIsVisible] = useState(true);
+  const lastScrollY = useRef(0);
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -99,14 +101,33 @@ export default function NavBar() {
       if (!mobile) setIsMenuOpen(false);
     };
 
+    const onScroll = () => {
+      const currentScrollY = window.scrollY;
+      const isScrollingDown = currentScrollY > lastScrollY.current;
+
+      if (currentScrollY < 100) {
+        setIsVisible(true);
+      } else if (isScrollingDown) {
+        setIsVisible(false);
+      } else {
+        setIsVisible(true);
+      }
+
+      lastScrollY.current = currentScrollY;
+    };
+
     window.addEventListener("resize", onResize);
-    return () => window.removeEventListener("resize", onResize);
+    window.addEventListener("scroll", onScroll);
+    return () => {
+      window.removeEventListener("resize", onResize);
+      window.removeEventListener("scroll", onScroll);
+    };
   }, []);
 
   const closeMenu = () => setIsMenuOpen(false);
 
   return (
-    <nav style={nav}>
+    <nav style={{ ...nav, transform: isVisible ? "translateY(0)" : "translateY(-100%)" }}>
       <div style={navInner}>
         {/* EMILY → "/" (or scroll to hero if already on "/") */}
         <NavLink onClick={goHome}>EMILY</NavLink>
@@ -174,11 +195,13 @@ const nav: CSSProperties = {
   top: 0,
   left: 0,
   right: 0,
+  width: "100%",
   zIndex: 1000,
-  padding: "3.5rem",
-  marginLeft: "0.5rem",
-  marginRight: "0.5rem",
+  padding: "3.5rem 3.5rem 3.5rem calc(3.5rem + 0.5rem)",
+  paddingRight: "calc(3.5rem + 0.5rem)",
   pointerEvents: "none",
+  boxSizing: "border-box",
+  transition: "transform 0.3s ease-in-out",
 };
 
 const navInner: CSSProperties = {

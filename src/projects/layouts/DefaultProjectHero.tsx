@@ -1,6 +1,7 @@
 import type { CSSProperties } from "react";
 import type { ProjectDetail } from "../../types/project";
 import HeroBackground from "../../components/FragmentShader";
+import CoverMedia from "../../components/CoverMedia";
 import "../styles.css";
 
 interface DefaultProjectHeroProps {
@@ -86,39 +87,13 @@ export default function DefaultProjectHero({ project }: DefaultProjectHeroProps)
 
             {project.coverUrl && (
               <div className="project-image-column hero-image">
-                <img src={project.coverUrl} alt={project.header} />
+                <CoverMedia src={project.coverUrl} alt={project.header} eager />
               </div>
             )}
           </div>
 
         </div>
       </div>
-
-      {project.sections && project.sections.length > 0 && (
-        <div className="project-page-wrap">
-          <div className="content-sections">
-            {project.sections.map((section) => (
-              <div key={section.id} className={`section section-${section.type}`}>
-                {section.type === "text" && <p className="section-text">{section.content}</p>}
-                {section.type === "image" && (
-                  <img src={section.content} alt="Project content" className="section-image" />
-                )}
-                {section.type === "video" && (
-                  <iframe
-                    className="section-video"
-                    src={section.content}
-                    title="Project video"
-                    allowFullScreen
-                  />
-                )}
-                {section.type === "html" && (
-                  <div className="section-html" dangerouslySetInnerHTML={{ __html: section.content }} />
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
     </div>
   );
 }
