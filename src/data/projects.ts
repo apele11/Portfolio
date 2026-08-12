@@ -1,4 +1,4 @@
-import { doc, getDoc } from "firebase/firestore";
+import { collection, doc, getDoc, getDocs } from "firebase/firestore";
 import { db } from "../firebase";
 import type { ProjectDetail } from "../types/project";
 
@@ -47,4 +47,12 @@ export async function fetchProjectById(projectId: string): Promise<ProjectDetail
   }
 
   return normalizeProjectDetail(projectId, projectDoc.data());
+}
+
+/** Every project, normalized and sorted by `order` — for cross-links like a "discover more" footer. */
+export async function fetchAllProjects(): Promise<ProjectDetail[]> {
+  const snapshot = await getDocs(collection(db, "projects"));
+  return snapshot.docs
+    .map((d) => normalizeProjectDetail(d.id, d.data()))
+    .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
 }

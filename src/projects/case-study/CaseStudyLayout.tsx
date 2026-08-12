@@ -1,6 +1,7 @@
 import { useEffect, type CSSProperties, type ReactNode } from "react";
 import type { ProjectDetail } from "../../types/project";
 import DefaultProjectHero from "../layouts/DefaultProjectHero";
+import DiscoverMore from "./DiscoverMore";
 import "./case-study.css";
 
 interface CaseStudyLayoutProps {
@@ -30,7 +31,10 @@ export default function CaseStudyLayout({ project, onBack, children }: CaseStudy
     <>
       <DefaultProjectHero project={project} onBack={onBack} />
       <main className="project-page case-study" style={skin}>
-        <div className="cs-study">{children}</div>
+        <div className="cs-study">
+          {children}
+          <DiscoverMore currentProjectId={project.id} />
+        </div>
       </main>
     </>
   );

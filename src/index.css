@@ -64,6 +64,16 @@
   --font-sans: "Space Grotesk", system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   --font-mono: ui-monospace, "SF Mono", "Cascadia Mono", "Segoe UI Mono", Consolas, monospace;
 
+  /* Layout guide. One margin, two content widths — every section centers itself
+     against these instead of declaring its own padding, so the hero and the case
+     study below it hold the same edge on wide screens.
+       --layout-gutter  the standard margin: never less than 24px, 64px at ≥1280px
+       --layout-max     wide sections (hero, media, grids)
+       --layout-read    prose sections — narrower so lines stay readable */
+  --layout-gutter: clamp(1.5rem, 5vw, 4rem);
+  --layout-max: 1440px;
+  --layout-read: 1040px;
+
   font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
   font-weight: 400;
@@ -79,6 +89,21 @@
 }
 
 html, body { height: 100%; margin: 0; }
+
+/* The container primitive. `.layout-container` for full-width sections,
+   `.layout-container.is-reading` for prose. Both keep --layout-gutter of
+   breathing room at every viewport and center what's left. */
+.layout-container {
+  width: 100%;
+  max-width: calc(var(--layout-max) + var(--layout-gutter) * 2);
+  margin-inline: auto;
+  padding-inline: var(--layout-gutter);
+  box-sizing: border-box;
+}
+
+.layout-container.is-reading {
+  max-width: calc(var(--layout-read) + var(--layout-gutter) * 2);
+}
 .bg-canvas{
   position: fixed;
   inset: 0;
