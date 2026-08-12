@@ -55,25 +55,27 @@ export default function NewBusinessLayout({ project, onBack }: ProjectLayoutProp
       </CaseStudySection>
 
       <MediaGroup>
-        <VideoFigure
-          src={`${ASSETS}/WholeSiteInteraction.mp4`}
-          caption="The shipped pitch, top to bottom — hero, agency story, services, case studies, contact."
-          showProgress
-        />
-
-        <MediaRow firstWide>
-          <SplineFigure
-            scene={HERO_SCENE}
-            cameraY={HERO_SCENE_CAMERA_Y}
-            poster={`${ASSETS}/NB-Hero.webp`}
-            alt="The pitch site's hero — the agency wordmark over an animated Spline 3D scene"
-            caption="Hero — Spline 3D, running live"
-          />
+        <div className="cs-reel">
           <VideoFigure
-            src={`${ASSETS}/Case-Study-Inside-Video.mp4`}
-            caption="Case studies — filtered by industry"
+            src={`${ASSETS}/WholeSiteInteraction.mp4`}
+            showProgress
+            className="cs-reel__hero"
           />
-        </MediaRow>
+
+          <MediaRow firstWide className="cs-reel__row">
+            <SplineFigure
+              scene={HERO_SCENE}
+              cameraY={HERO_SCENE_CAMERA_Y}
+              poster={`${ASSETS}/NB-Hero.webp`}
+              alt="The pitch site's hero — the agency wordmark over an animated Spline 3D scene"
+              caption="Hero — Spline 3D, running live"
+            />
+            <VideoFigure
+              src={`${ASSETS}/Case-Study-Inside-Video.mp4`}
+              caption="Case studies — filtered by industry"
+            />
+          </MediaRow>
+        </div>
 
         <VideoFigure
           src={`${ASSETS}/AdminInteraction-Recording.mp4`}

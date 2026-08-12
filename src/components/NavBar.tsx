@@ -31,8 +31,8 @@ function NavLink({
     position: "absolute",
     bottom: "-4px",
     left: 0,
-    height: "1px",
-    backgroundColor: "white",
+    height: "1.5px",
+    backgroundColor: "currentColor",
     width: underlineWidth,
     transition: "width 0.3s ease",
   };
@@ -75,7 +75,9 @@ export default function NavBar() {
   const [isMobile, setIsMobile] = useState(() => window.innerWidth <= 768);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isVisible, setIsVisible] = useState(true);
+  const [isOverLight, setIsOverLight] = useState(false);
   const lastScrollY = useRef(0);
+  const innerRef = useRef<HTMLDivElement>(null);
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -99,9 +101,28 @@ export default function NavBar() {
       const mobile = window.innerWidth <= 768;
       setIsMobile(mobile);
       if (!mobile) setIsMenuOpen(false);
+      syncInk();
+    };
+
+    // Which surface is under the row right now. Pages that lay a light ground
+    // under the fixed nav mark it `data-nav-ink="dark"`; anything unmarked is
+    // assumed dark, which is the shader hero everywhere else.
+    const syncInk = () => {
+      const row = innerRef.current;
+      if (!row) return;
+      const { top, bottom } = row.getBoundingClientRect();
+      const mid = (top + bottom) / 2;
+      const overLight = Array.from(
+        document.querySelectorAll<HTMLElement>('[data-nav-ink="dark"]')
+      ).some((el) => {
+        const r = el.getBoundingClientRect();
+        return r.top <= mid && r.bottom >= mid;
+      });
+      setIsOverLight(overLight);
     };
 
     const onScroll = () => {
+      syncInk();
       const currentScrollY = window.scrollY;
       const isScrollingDown = currentScrollY > lastScrollY.current;
 
@@ -116,19 +137,23 @@ export default function NavBar() {
       lastScrollY.current = currentScrollY;
     };
 
+    // The new route's ground may differ from the old one's, and it mounts
+    // without a scroll event to trigger the check.
+    syncInk();
+
     window.addEventListener("resize", onResize);
     window.addEventListener("scroll", onScroll);
     return () => {
       window.removeEventListener("resize", onResize);
       window.removeEventListener("scroll", onScroll);
     };
-  }, []);
+  }, [location.pathname]);
 
   const closeMenu = () => setIsMenuOpen(false);
 
   return (
     <nav style={{ ...nav, transform: isVisible ? "translateY(0)" : "translateY(-100%)" }}>
-      <div style={navInner}>
+      <div ref={innerRef} style={{ ...navInner, color: isOverLight ? "#0a0a0a" : "#ffffff" }}>
         {/* EMILY → "/" (or scroll to hero if already on "/") */}
         <NavLink onClick={goHome}>EMILY</NavLink>
 
@@ -197,8 +222,10 @@ const nav: CSSProperties = {
   right: 0,
   width: "100%",
   zIndex: 1000,
-  padding: "3.5rem 3.5rem 3.5rem calc(3.5rem + 0.5rem)",
-  paddingRight: "calc(3.5rem + 0.5rem)",
+  // Horizontal padding tracks --layout-gutter so the nav row starts and ends
+  // on the same edges as the page content column at every width, instead of
+  // a fixed 4rem that overhangs the gutter once it tapers below that.
+  padding: "3.5rem var(--layout-gutter)",
   pointerEvents: "none",
   boxSizing: "border-box",
   transition: "transform 0.3s ease-in-out",
@@ -209,19 +236,27 @@ const navInner: CSSProperties = {
   alignItems: "center",
   justifyContent: "space-between",
   fontFamily: '"Space Grotesk", sans-serif',
-  fontSize: "1rem",
-  letterSpacing: "0.2em",
+  // Type and tracking shrink with the viewport so the row always fits between
+  // the gutters — at the narrow end of desktop the old fixed 0.85rem/0.2em
+  // ran the links into the wordmark.
+  fontSize: "clamp(0.72rem, 0.95vw, 0.85rem)",
+  letterSpacing: "clamp(0.1em, 0.35vw, 0.15em)",
+  whiteSpace: "nowrap",
   textTransform: "uppercase",
-  color: "white",
-  opacity: 0.8,
   gap: "0.5rem",
   pointerEvents: "auto",
+  // `color` is set on the element, not here: the nav crosses both the dark
+  // shader hero and the case studies' paper-white ground, so the ink flips
+  // between the two extremes rather than blending. `difference` used to do
+  // this automatically, but inverting against a mid-tone ground (the hero's
+  // indigo) just yields another mid-tone — exactly where contrast was worst.
+  transition: "color 0.2s ease",
 };
 
 const rightGroup: CSSProperties = {
   display: "flex",
   alignItems: "center",
-  gap: "4rem",
+  gap: "clamp(1.1rem, 2.6vw, 2.5rem)",
 };
 
 const menuButton: CSSProperties = {
@@ -235,7 +270,7 @@ const menuButton: CSSProperties = {
   background: "transparent",
   border: "none",
   borderRadius: "8px",
-  color: "white",
+  color: "inherit",
   cursor: "pointer",
   pointerEvents: "auto",
 };
@@ -243,7 +278,7 @@ const menuButton: CSSProperties = {
 const menuLine: CSSProperties = {
   width: "18px",
   height: "1.5px",
-  backgroundColor: "white",
+  backgroundColor: "currentColor",
   display: "block",
 };
 
@@ -260,6 +295,9 @@ const mobileMenu: CSSProperties = {
   borderRadius: 0,
   border: "1px solid rgba(255,255,255,0.18)",
   backgroundColor: "rgba(22, 22, 28, 0.42)",
+  // This panel carries its own dark backdrop, so it stays light-on-dark even
+  // when the row above it has inked dark for a paper-white page behind it.
+  color: "#ffffff",
   backdropFilter: "blur(14px) saturate(140%)",
   WebkitBackdropFilter: "blur(14px) saturate(140%)",
   boxShadow: "0 8px 32px rgba(0, 0, 0, 0.28)",
@@ -281,6 +319,9 @@ const mobileMenuClosed: CSSProperties = {
 };
 
 const link: CSSProperties = {
-  fontWeight: 400,
+  // Weight is the contrast lever that survives `difference` blending: the row
+  // can't paint a scrim or pick a color, so heavier strokes are what keep the
+  // labels legible over mid-tone shader frames.
+  fontWeight: 500,
   cursor: "pointer",
 };

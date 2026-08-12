@@ -30,7 +30,9 @@ export default function CaseStudyLayout({ project, onBack, children }: CaseStudy
   return (
     <>
       <DefaultProjectHero project={project} onBack={onBack} />
-      <main className="project-page case-study" style={skin}>
+      {/* The case study's ground is paper-white, so the nav has to ink itself
+          dark once it scrolls off the hero and over this. See NavBar. */}
+      <main className="project-page case-study" data-nav-ink="dark" style={skin}>
         <div className="cs-study">
           {children}
           <DiscoverMore currentProjectId={project.id} />

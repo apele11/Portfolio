@@ -136,12 +136,14 @@ interface VideoFigureProps {
   size?: MediaSize;
   /** Whether to show a scrubbable progress bar along the bottom of the video. */
   showProgress?: boolean;
+  /** Extra class on the outer <figure> — e.g. to condense the rhythm around a captionless figure. */
+  className?: string;
 }
 
 /**
  * A muted, looping demo video that plays only while on screen.
  */
-export function VideoFigure({ src, caption, label, poster, size, showProgress }: VideoFigureProps) {
+export function VideoFigure({ src, caption, label, poster, size, showProgress, className }: VideoFigureProps) {
   const ref = useRef<HTMLVideoElement>(null);
   const progressRef = useRef<HTMLDivElement>(null);
   const trackRef = useRef<HTMLDivElement>(null);
@@ -231,7 +233,7 @@ export function VideoFigure({ src, caption, label, poster, size, showProgress }:
   };
 
   return (
-    <figure className={`cs-figure${sizeClass(size)}`}>
+    <figure className={`cs-figure${sizeClass(size)}${className ? ` ${className}` : ""}`}>
       {label ? <p className="cs-media-label">{label}</p> : null}
       <div className="cs-video-wrapper" style={{ position: "relative", display: "flex", width: "100%" }}>
         <video
@@ -373,8 +375,17 @@ export function SplineFigure({ scene, poster, alt, caption, label, size, cameraY
  * the first child double width — for a row where one piece of evidence (e.g.
  * a live 3D scene) outweighs the rest.
  */
-export function MediaRow({ children, firstWide }: { children: ReactNode; firstWide?: boolean }) {
-  return <div className={firstWide ? "cs-media-row cs-media-row--first-wide" : "cs-media-row"}>{children}</div>;
+export function MediaRow({
+  children,
+  firstWide,
+  className,
+}: {
+  children: ReactNode;
+  firstWide?: boolean;
+  className?: string;
+}) {
+  const classes = ["cs-media-row", firstWide && "cs-media-row--first-wide", className].filter(Boolean).join(" ");
+  return <div className={classes}>{children}</div>;
 }
 
 /**

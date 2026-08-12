@@ -69,6 +69,11 @@
      media instead of sitting against the label rail. */
   --cs-band: 708px;
 
+  /* Single gap value for one exhibit's worth of media — .cs-media-group,
+     .cs-media-row, and .cs-reel all read from this so they can't drift apart
+     into different constants again. */
+  --cs-media-gap: clamp(18px, 2.2vw, 30px);
+
   --cs-serif: "EB Garamond", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
   --cs-sans: "Jost", system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   --cs-mono: "IBM Plex Mono", ui-monospace, "SF Mono", "Cascadia Mono", Consolas, monospace;
@@ -312,7 +317,7 @@
 .cs-media-group {
   display: flex;
   flex-direction: column;
-  gap: clamp(36px, 4.5vw, 60px);
+  gap: var(--cs-media-gap);
 }
 
 /* Three-up triptych. The cells are deliberately portrait: a landscape capture
@@ -321,7 +326,7 @@
 .cs-media-row {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 30px;
+  gap: var(--cs-media-gap);
 }
 
 .cs-media-row--first-wide {
@@ -339,6 +344,75 @@
    matched to the portrait cells beside it instead of growing taller. */
 .cs-media-row--first-wide > :first-child .cs-spline {
   aspect-ratio: 594 / 355;
+}
+
+/* ── Hero reel (NewBusinessLayout's opening video + row) ──────
+   The full-width video and the row beneath it, held to a fixed share of the
+   viewport instead of stacking at their own aspect ratios — two rows of
+   media at native/portrait ratios run taller than the screen. Each cell
+   crops via object-fit instead. Gated to wider screens: below it, the
+   .cs-spline children are absolutely positioned and get their height only
+   from `aspect-ratio` — collapsing that to `auto` without a flex-driven
+   parent height to replace it would leave the scene with zero height. Below
+   720px the rows just keep their normal aspect-ratio-driven sizing. */
+@media (min-width: 721px) {
+  .cs-reel {
+    display: flex;
+    flex-direction: column;
+    gap: var(--cs-media-gap);
+    height: calc(100vh - 4rem);
+  }
+
+  .cs-reel__hero.cs-figure {
+    flex: 2.4 1 0;
+    min-height: 0;
+    height: auto;
+  }
+
+  .cs-reel__hero .cs-video-wrapper {
+    height: 100%;
+  }
+
+  .cs-reel__hero video {
+    height: 100%;
+    /* contain, not cover — this is a screen recording of the whole site, so
+       cropping it to fill the box cuts off real content (nav, footer) rather
+       than trimming empty margin the way a crop works on a photo/b-roll clip. */
+    object-fit: contain;
+  }
+
+  .cs-reel__row.cs-media-row {
+    flex: 1 1 0;
+    min-height: 0;
+  }
+
+  .cs-reel__row .cs-figure {
+    height: 100%;
+    /* The caption isn't flexed (only the media wrapper is), so if it and the
+       media's min-content ever exceed this fixed height, it would overflow
+       past the box instead of shrinking — bleeding the reel's actual bottom
+       edge past its intended calc(100vh - 4rem) and throwing off the gap
+       before whatever comes next. */
+    overflow: hidden;
+  }
+
+  /* The media element grows to fill the cell; the caption keeps its own
+     content height instead of being squeezed to match. */
+  .cs-reel__row .cs-figure .cs-video-wrapper,
+  .cs-reel__row .cs-figure .cs-spline {
+    flex: 1 1 0;
+    min-height: 0;
+    height: auto;
+  }
+
+  .cs-reel__row.cs-media-row .cs-figure img,
+  .cs-reel__row.cs-media-row .cs-figure video,
+  .cs-reel__row.cs-media-row .cs-figure .cs-spline {
+    aspect-ratio: auto;
+    height: 100%;
+    width: 100%;
+    object-fit: cover;
+  }
 }
 
 /* Live Spline scene. The poster and the canvas are stacked in the same frame so
