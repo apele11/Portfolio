@@ -1,6 +1,34 @@
+import { useState } from "react";
 import NavBar from "../components/NavBar";
 import { PLAYGROUND_ITEMS } from "../data/playground";
+import type { PlaygroundItem } from "../data/playground";
 import "./Playground.css";
+
+/**
+ * Live embed with its poster held over the top until the demo has booted.
+ *
+ * The swap is instant rather than a crossfade: the poster is a still of the same
+ * scene, so cutting straight to the running version reads as the animation
+ * starting, where a fade reads as a page defect.
+ */
+function EmbedFrame({ item }: { item: PlaygroundItem }) {
+  const [loaded, setLoaded] = useState(false);
+
+  return (
+    <>
+      <iframe
+        src={item.embedUrl}
+        className="playground-iframe"
+        title={item.title}
+        scrolling="no"
+        onLoad={() => setLoaded(true)}
+      />
+      {item.poster && !loaded && (
+        <img src={item.poster} alt="" aria-hidden="true" className="playground-poster" />
+      )}
+    </>
+  );
+}
 
 export default function PlaygroundPage() {
   return (
@@ -36,13 +64,7 @@ export default function PlaygroundPage() {
                 style={{ height: item.height || "350px" }}
               >
                 {item.type === "iframe" && item.embedUrl ? (
-                  <iframe
-                    src={item.embedUrl}
-                    className="playground-iframe"
-                    title={item.title}
-                    scrolling="no"
-                    loading="lazy"
-                  />
+                  <EmbedFrame item={item} />
                 ) : (
                   item.mediaUrl && (
                     <img

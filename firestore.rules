@@ -1,0 +1,41 @@
+rules_version = '2';
+
+// Deploy with:  firebase deploy --only firestore:rules
+//
+// This file — not the admin panel's login form — is the security boundary. The
+// panel runs entirely in the browser, so its UI can be bypassed; only these
+// rules decide who may write.
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // The signed-in account allowed to edit content. Copy the value from the
+    // admin panel header (it prints `uid <...>` next to your email once you
+    // sign in) and paste it here.
+    //
+    // Pinning to a UID rather than the looser `request.auth != null` is
+    // deliberate. The Firebase web API key is public by design, and with
+    // Email/Password sign-in enabled anyone holding it can self-register an
+    // account via createUserWithEmailAndPassword. Such an account satisfies
+    // `request.auth != null`, so that check alone would leave the collection
+    // effectively world-writable.
+    function isOwner() {
+      return request.auth != null
+          && request.auth.uid == 'FDnKULNv0udWP389fGWvwwAvg393';
+    }
+
+    // Portfolio content: world-readable (the public site renders it),
+    // owner-only writes.
+    match /projects/{projectId} {
+      allow read: if true;
+      allow write: if isOwner();
+    }
+
+    // Everything else is denied. Firestore denies unmatched paths by default;
+    // this states it explicitly so a new collection cannot be opened up by
+    // accident.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

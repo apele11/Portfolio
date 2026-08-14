@@ -1,9 +1,9 @@
 import { useState, useEffect, type RefObject } from "react";
 import { db } from "../firebase";
-import { collection, onSnapshot } from "firebase/firestore";
+import { collection, getDocs, onSnapshot } from "firebase/firestore";
 import ProjectsFrontend, { type Project } from "./ProjectsFrontend";
-import * as THREE from "three";
-import { PLAYGROUND_ITEMS } from "../data/playground";
+import type * as THREE from "three";
+import { PROJECTS_SNAPSHOT } from "../data/projects.snapshot";
 
 interface ShaderUniforms {
   uColor1: { value: THREE.Color };
@@ -19,76 +19,61 @@ export default function Projects({
   uniformsRef?: RefObject<ShaderUniforms | null>;
   onProjectSelect?: (projectId: string) => void;
 } = {}) {
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [loading, setLoading] = useState(true);
+  // Seeded from the build-time snapshot so the grid paints real cards on the
+  // first frame instead of a spinner. Firestore is still the source of truth —
+  // whatever it returns replaces this.
+  const [projects, setProjects] = useState<Project[]>(PROJECTS_SNAPSHOT);
+  const [loaded, setLoaded] = useState(false);
 
-  // Load projects from Firestore with real-time updates
   useEffect(() => {
-    const unsubscribe = onSnapshot(
-      collection(db, "projects"),
-      (snapshot) => {
-        const projectsList = snapshot.docs.map((doc) => {
-          return {
-            id: doc.id,
-            ...doc.data(),
-          };
-        }) as Project[];
-        projectsList.sort((a, b) => (a.order || 0) - (b.order || 0));
-        setProjects(projectsList);
-        setLoading(false);
-      },
-      (error: Error) => {
-        console.error("Error loading projects:", error.message);
-        setLoading(false);
-      }
-    );
+    const toList = (docs: { id: string; data: () => unknown }[]) =>
+      (docs.map((doc) => ({ id: doc.id, ...(doc.data() as object) })) as Project[]).sort(
+        (a, b) => (a.order || 0) - (b.order || 0)
+      );
 
-    return () => unsubscribe();
+    const onError = (error: Error) => {
+      console.error("Error loading projects:", error.message);
+      setLoaded(true);
+    };
+
+    // Real-time updates only in dev, where the admin panel edits documents and
+    // the grid should reflect changes live. Production content only changes on
+    // deploy, so it takes the cheaper one-shot read (no WebChannel handshake).
+    if (import.meta.env.DEV) {
+      const unsubscribe = onSnapshot(
+        collection(db, "projects"),
+        (snapshot) => {
+          setProjects(toList(snapshot.docs));
+          setLoaded(true);
+        },
+        onError
+      );
+      return () => unsubscribe();
+    }
+
+    let cancelled = false;
+    getDocs(collection(db, "projects"))
+      .then((snapshot) => {
+        if (cancelled) return;
+        setProjects(toList(snapshot.docs));
+        setLoaded(true);
+      })
+      .catch(onError);
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
-  return (
-    <>
-      <ProjectsFrontend
-        projects={projects}
-        loading={loading}
-        uniformsRef={uniformsRef}
-        onProjectSelect={onProjectSelect}
-      />
-      {!loading && <PlaygroundPreloader />}
-    </>
-  );
-}
-
-function PlaygroundPreloader() {
-  const iframeItems = PLAYGROUND_ITEMS.filter(
-    (item) => item.type === "iframe" && item.embedUrl
-  );
+  // Only a cold start with no usable snapshot can still show the spinner.
+  const loading = !loaded && projects.length === 0;
 
   return (
-    <div
-      style={{
-        position: "absolute",
-        width: "1px",
-        height: "1px",
-        padding: 0,
-        margin: "-1px",
-        overflow: "hidden",
-        clip: "rect(0, 0, 0, 0)",
-        whiteSpace: "nowrap",
-        border: 0,
-        opacity: 0.01,
-        pointerEvents: "none",
-      }}
-      aria-hidden="true"
-    >
-      {iframeItems.map((item) => (
-        <iframe
-          key={item.id}
-          src={item.embedUrl}
-          title={`preload-${item.title}`}
-          style={{ width: "1px", height: "1px", border: "none" }}
-        />
-      ))}
-    </div>
+    <ProjectsFrontend
+      projects={projects}
+      loading={loading}
+      uniformsRef={uniformsRef}
+      onProjectSelect={onProjectSelect}
+    />
   );
 }

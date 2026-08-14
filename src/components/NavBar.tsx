@@ -1,16 +1,20 @@
 import { useEffect, useState, useRef } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import type { CSSProperties } from "react";
+import { prefetchPlayground } from "../playgroundPrefetch";
 
 
 function NavLink({
   children,
   to,
   onClick,
+  onIntent,
 }: {
   children: string;
   to?: string;
   onClick?: () => void;
+  /** Fired on hover/focus — a click is likely, so start fetching what it needs. */
+  onIntent?: () => void;
 }) {
   const [isHovered, setIsHovered] = useState(false);
   const location = useLocation();
@@ -61,8 +65,13 @@ function NavLink({
     <Link
       to={to}
       style={sharedStyles}
-      onMouseEnter={() => setIsHovered(true)}
+      onMouseEnter={() => {
+        setIsHovered(true);
+        onIntent?.();
+      }}
       onMouseLeave={() => setIsHovered(false)}
+      onFocus={onIntent}
+      onTouchStart={onIntent}
       onClick={onClick}
     >
       <span style={link}>{children}</span>
@@ -174,7 +183,9 @@ export default function NavBar() {
             {/* WORKS → "/" (or scroll to hero if already on "/") */}
             <NavLink onClick={goHome}>WORKS</NavLink>
 
-            <NavLink to="/playground">PLAYGROUND</NavLink>
+            <NavLink to="/playground" onIntent={prefetchPlayground}>
+              PLAYGROUND
+            </NavLink>
             <NavLink to="/about">ABOUT</NavLink>
 
             {import.meta.env.DEV && (
@@ -196,7 +207,7 @@ export default function NavBar() {
             WORKS
           </NavLink>
 
-          <NavLink to="/playground" onClick={closeMenu}>
+          <NavLink to="/playground" onClick={closeMenu} onIntent={prefetchPlayground}>
             PLAYGROUND
           </NavLink>
 

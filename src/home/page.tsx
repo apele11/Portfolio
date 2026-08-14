@@ -4,7 +4,7 @@ import HeroBackground from "../components/FragmentShader";
 import Hero from "../components/Hero";
 import NavBar from "../components/NavBar";
 import Projects from "../components/Projects";
-import { testConnection } from "../firebase";
+import { warmPlaygroundEmbeds } from "../playgroundPrefetch";
 
 
 export default function Home() {
@@ -12,9 +12,15 @@ export default function Home() {
   const navigate = useNavigate();
   const [showProjects, setShowProjects] = useState(true);
 
+  // Warm the playground embeds once the page has gone quiet, so the ~1s
+  // third-party load is already paid for if the user heads there next.
   useEffect(() => {
-    // Test Firebase connection on app load
-    testConnection();
+    if (typeof requestIdleCallback === "function") {
+      const handle = requestIdleCallback(warmPlaygroundEmbeds, { timeout: 4000 });
+      return () => cancelIdleCallback(handle);
+    }
+    const timer = setTimeout(warmPlaygroundEmbeds, 2500);
+    return () => clearTimeout(timer);
   }, []);
 
   useEffect(() => {

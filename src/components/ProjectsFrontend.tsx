@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, type RefObject } from "react";
 import type { CSSProperties } from "react";
-import * as THREE from "three";
+import type * as THREE from "three";
 import CoverMedia from "./CoverMedia";
 
 interface ShaderUniforms {

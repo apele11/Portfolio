@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type MutableRefObject } from "react";
 import type { CSSProperties } from "react";
 import downArrowSrc from "../svg/down-arrow.svg";
-import * as THREE from "three";
+import type * as THREE from "three";
 
 interface ShaderUniforms {
   uColor1: { value: THREE.Color };

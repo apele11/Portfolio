@@ -40,17 +40,19 @@ interface ShaderUniforms {
  * const uniformsRef = useRef<ShaderUniforms | null>(null);
  * return <HeroBackground uniformsRef={uniformsRef} />;
  */
+export interface HeroBackgroundProps {
+  uniformsRef?: React.Ref<ShaderUniforms | null>;
+  fixed?: boolean;
+  className?: string;
+  colors?: [string, string, string, string];
+}
+
 export default function HeroBackground({
   uniformsRef,
   fixed = true,
   className,
   colors,
-}: {
-  uniformsRef?: React.Ref<ShaderUniforms | null>;
-  fixed?: boolean;
-  className?: string;
-  colors?: [string, string, string, string];
-} = {}) {
+}: HeroBackgroundProps = {}) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
   useEffect(() => {

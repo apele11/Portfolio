@@ -4,7 +4,7 @@ import { db } from "../firebase";
 import { doc, setDoc, deleteDoc } from "firebase/firestore";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import ColorPicker from "./ColorPicker";
-import * as THREE from "three";
+import type * as THREE from "three";
 
 interface Project {
   id: string;

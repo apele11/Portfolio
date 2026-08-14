@@ -1,23 +1,64 @@
 import { useState, useEffect } from "react";
 import { db } from "../firebase.js";
+import { auth } from "../auth";
+import { onAuthStateChanged, signInWithEmailAndPassword, signOut } from "firebase/auth";
+import type { User } from "firebase/auth";
 import { doc, collection, getDocs, setDoc, deleteDoc } from "firebase/firestore";
 import type { ProjectDetail } from "../types/project";
 import { normalizeProjectDetail } from "../data/projects";
 import CoverMedia from "./CoverMedia";
 import "./Admin.css";
 
+/** Firebase auth errors carry a `code`; map the ones worth explaining. */
+function authErrorMessage(error: unknown): string {
+  const code =
+    error && typeof error === "object" && "code" in error ? String(error.code) : "";
+
+  switch (code) {
+    case "auth/invalid-email":
+      return "That doesn't look like a valid email address.";
+    case "auth/invalid-credential":
+    case "auth/wrong-password":
+    case "auth/user-not-found":
+      return "Incorrect email or password.";
+    case "auth/too-many-requests":
+      return "Too many attempts. Wait a few minutes and try again.";
+    case "auth/network-request-failed":
+      return "Network error — check your connection.";
+    case "auth/operation-not-allowed":
+      return "Email/Password sign-in is not enabled for this Firebase project. Enable it in Firebase Console → Authentication → Sign-in method.";
+    default:
+      return error instanceof Error ? error.message : "Sign-in failed.";
+  }
+}
+
 export default function Admin({ onClose }: { onClose?: () => void }) {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [user, setUser] = useState<User | null>(null);
+  const [authChecked, setAuthChecked] = useState(false);
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [authError, setAuthError] = useState<string | null>(null);
+  const [signingIn, setSigningIn] = useState(false);
   const [projects, setProjects] = useState<ProjectDetail[]>([]);
   const [selectedProject, setSelectedProject] = useState<ProjectDetail | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [editMode, setEditMode] = useState(false);
 
+  // Firebase persists the session, so a reload restores it rather than bouncing
+  // back to the login form. `authChecked` avoids flashing that form in the gap.
+  useEffect(
+    () =>
+      onAuthStateChanged(auth, (nextUser) => {
+        setUser(nextUser);
+        setAuthChecked(true);
+      }),
+    []
+  );
+
   // Load projects from Firestore
   useEffect(() => {
-    if (!isAuthenticated) {
+    if (!user) {
       return;
     }
 
@@ -41,15 +82,30 @@ export default function Admin({ onClose }: { onClose?: () => void }) {
     };
 
     loadProjects();
-  }, [isAuthenticated]);
+  }, [user]);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (password === "emily") {
-      setIsAuthenticated(true);
+    setAuthError(null);
+    setSigningIn(true);
+    try {
+      await signInWithEmailAndPassword(auth, email.trim(), password);
       setPassword("");
-    } else {
-      alert("Incorrect password");
+    } catch (error) {
+      setAuthError(authErrorMessage(error));
+    } finally {
+      setSigningIn(false);
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      setProjects([]);
+      setSelectedProject(null);
+      setEditMode(false);
+    } catch (error) {
+      console.error("Sign out failed:", error);
     }
   };
 
@@ -156,18 +212,39 @@ export default function Admin({ onClose }: { onClose?: () => void }) {
     }
   };
 
-  if (!isAuthenticated) {
+  if (!authChecked) {
+    return (
+      <div className="admin-login">
+        <p>Checking sign-in…</p>
+      </div>
+    );
+  }
+
+  if (!user) {
     return (
       <div className="admin-login">
         <form onSubmit={handleLogin}>
           <h2>Admin Login</h2>
           <input
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="Email"
+            autoComplete="username"
+            required
+          />
+          <input
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            placeholder="Enter password"
+            placeholder="Password"
+            autoComplete="current-password"
+            required
           />
-          <button type="submit">Login</button>
+          <button type="submit" disabled={signingIn}>
+            {signingIn ? "Signing in…" : "Sign in"}
+          </button>
+          {authError && <div className="error">{authError}</div>}
         </form>
       </div>
     );
@@ -177,11 +254,21 @@ export default function Admin({ onClose }: { onClose?: () => void }) {
     <div className="admin-container">
       <div className="admin-top-bar">
         <h1>Admin Panel</h1>
-        {onClose && (
-          <button onClick={onClose} className="admin-close-btn">
-            ✕ Close
+        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+          {/* The UID is shown because firestore.rules pins write access to it —
+              copy it from here when setting the rules up. */}
+          <span style={{ fontSize: "12px", opacity: 0.7 }}>
+            {user.email} · uid <code>{user.uid}</code>
+          </span>
+          <button onClick={handleLogout} className="btn-secondary">
+            Sign out
           </button>
-        )}
+          {onClose && (
+            <button onClick={onClose} className="admin-close-btn">
+              ✕ Close
+            </button>
+          )}
+        </div>
       </div>
       {error && <div className="error">{error}</div>}
 
