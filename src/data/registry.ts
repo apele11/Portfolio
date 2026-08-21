@@ -3,6 +3,7 @@ import type { ProjectDetail } from "../types/project";
 import DefaultProjectHero from "../projects/layouts/DefaultProjectHero";
 import LockedInProjectLayout from "../projects/layouts/LockedInProjectLayout";
 import NewBusinessLayout from "../projects/layouts/NewBusinessLayout";
+import Libre3DLayout from "../projects/layouts/Libre3DLayout";
 
 export type ProjectLayoutProps = {
   project: ProjectDetail;
@@ -38,6 +39,10 @@ const layoutRegistry: LayoutRegistryEntry[] = [
   {
     matches: (project) => headerIncludes(project, "new business"),
     component: NewBusinessLayout,
+  },
+  {
+    matches: (project) => headerIncludes(project, "libre3d", "libre 3d"),
+    component: Libre3DLayout,
   },
 ];
 

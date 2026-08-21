@@ -40,6 +40,9 @@ interface ShaderUniforms {
  * const uniformsRef = useRef<ShaderUniforms | null>(null);
  * return <HeroBackground uniformsRef={uniformsRef} />;
  */
+/** The shader's own default stops, reused by the no-WebGL gradient fallback. */
+const FALLBACK_COLORS = ["#260b54", "#095f75", "#2b716b", "#a9a2d7"] as const;
+
 export interface HeroBackgroundProps {
   uniformsRef?: React.Ref<ShaderUniforms | null>;
   fixed?: boolean;
@@ -59,24 +62,56 @@ export default function HeroBackground({
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    const renderer = new THREE.WebGLRenderer({
-      canvas,
-      antialias: true,
-      alpha: true,
-      powerPreference: "high-performance",
-    });
+    // This is one full-screen quad of soft gradient plus grain. MSAA has no
+    // polygon edge to smooth here, and the depth and stencil buffers are never
+    // read, so all three only ever cost memory bandwidth — the scarce resource
+    // on a phone GPU. The context was asking for 4x MSAA and getting it.
+    //
+    // The try/catch is load-bearing. three.js asks for a "webgl2" context and
+    // has no WebGL1 fallback since r163, so on a device without WebGL2 this
+    // constructor throws — and thrown from an effect with no error boundary
+    // above it, that unmounts the whole app. The site rendered a blank page:
+    // no heading, no nav, no projects. Losing the background is acceptable;
+    // losing the portfolio is not, so fall back to a static gradient in the
+    // same palette and leave the rest of the page alone.
+    let renderer: THREE.WebGLRenderer;
+    try {
+      renderer = new THREE.WebGLRenderer({
+        canvas,
+        antialias: false,
+        depth: false,
+        stencil: false,
+        alpha: true,
+        powerPreference: "high-performance",
+      });
+    } catch {
+      const [c1, c2, c3, c4] = colors ?? FALLBACK_COLORS;
+      canvas.style.background =
+        `linear-gradient(160deg, ${c1} 0%, ${c2} 38%, ${c3} 68%, ${c4} 100%)`;
+      return;
+    }
 
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    const isCoarsePointer = window.matchMedia("(pointer: coarse)").matches;
+
+    // A 375pt phone at the old flat cap of 2 shaded 1.2M fragments a frame, each
+    // one running the warp loop's two dozen trig calls. Dropping to 1.5 costs
+    // about 45% of those and is invisible on a gradient this soft — the only
+    // detail near pixel scale is the grain, which just gets slightly coarser.
+    // Resolved per resize rather than once at mount, so a window dragged across
+    // the breakpoint doesn't keep the tier it happened to load at.
+    const pixelRatioFor = (width: number) =>
+      Math.min(window.devicePixelRatio, isCoarsePointer || width <= 768 ? 1.5 : 2);
+
     renderer.outputColorSpace = THREE.SRGBColorSpace;
 
     const scene = new THREE.Scene();
     const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
 
     const targetColors = {
-      uColor1: new THREE.Color(colors?.[0] ?? "#260b54"),
-      uColor2: new THREE.Color(colors?.[1] ?? "#095f75"),
-      uColor3: new THREE.Color(colors?.[2] ?? "#2b716b"),
-      uColor4: new THREE.Color(colors?.[3] ?? "#a9a2d7"),
+      uColor1: new THREE.Color(colors?.[0] ?? FALLBACK_COLORS[0]),
+      uColor2: new THREE.Color(colors?.[1] ?? FALLBACK_COLORS[1]),
+      uColor3: new THREE.Color(colors?.[2] ?? FALLBACK_COLORS[2]),
+      uColor4: new THREE.Color(colors?.[3] ?? FALLBACK_COLORS[3]),
     };
 
     const uniforms = {
@@ -213,6 +248,13 @@ void main(){
     const mesh = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), material);
     scene.add(mesh);
 
+    let lastW = 0;
+    let lastH = 0;
+
+    // Set by anything that changes the image. The frame loop skips its draw
+    // call while this is false and nothing is in motion — see tick().
+    let needsRender = true;
+
     const resize = () => {
       /**
        * Handles canvas resize events and updates shader uniforms
@@ -221,9 +263,24 @@ void main(){
        */
       const parent = canvas.parentElement;
       const w = fixed ? window.innerWidth : (parent?.clientWidth ?? window.innerWidth);
-      const h = fixed ? window.innerHeight : (parent?.clientHeight ?? window.innerHeight);
+      let h = fixed ? window.innerHeight : (parent?.clientHeight ?? window.innerHeight);
+
+      // A mobile URL bar sliding away changes innerHeight mid-scroll, and
+      // reallocating the drawing buffer at that exact moment is a visible hitch
+      // every time the user starts scrolling. Only a width change (a rotation)
+      // is allowed to shrink the canvas; until then it keeps the tallest height
+      // it has seen and the few extra rows sit harmlessly behind the bar.
+      if (fixed && isCoarsePointer && w === lastW && h < lastH) h = lastH;
+
+      if (w === lastW && h === lastH) return;
+      lastW = w;
+      lastH = h;
+
+      // Before setSize — three.js multiplies the size by the current ratio.
+      renderer.setPixelRatio(pixelRatioFor(w));
       renderer.setSize(w, h, false);
       uniforms.uRes.value.set(w, h);
+      needsRender = true;
     };
 
     resize();
@@ -356,9 +413,50 @@ void main(){
       uniforms.uFlowTime.value = flowTime;
       uniforms.uTime.value = now / 1000;
 
-      renderer.render(scene, camera);
+      // Nothing here animates on its own. uFlowTime only advances while the
+      // pointer is moving or a colour is in transit, and uTime is declared but
+      // unused by the fragment shader — so an untouched page was re-drawing a
+      // pixel-identical frame sixty times a second. That is every frame on a
+      // phone, which has no pointermove at all: the whole cost, none of the
+      // motion. Draw only when something actually moved. The look is unchanged;
+      // the palette transitions between projects still animate, because a
+      // colour in flight keeps this true until it lands.
+      const inMotion =
+        mouseSmooth.distanceToSquared(mouseTarget) > 1e-8 ||
+        drive > 1e-4 ||
+        colorDiff > 1e-6 ||
+        colorOffset.lengthSq() > 1e-10 ||
+        colorOffsetVelocity.lengthSq() > 1e-10;
+
+      if (inMotion || needsRender) {
+        renderer.render(scene, camera);
+        needsRender = false;
+      }
+
       raf = requestAnimationFrame(tick);
     };
+
+    // Coming back from a hidden tab, the drawing buffer may have been dropped
+    // (preserveDrawingBuffer is false) and there may be nothing in motion to
+    // trigger a repaint, so ask for one explicitly.
+    const onVisibility = () => {
+      if (!document.hidden) {
+        last = performance.now();
+        needsRender = true;
+      }
+    };
+    document.addEventListener("visibilitychange", onVisibility);
+
+    // iOS drops WebGL contexts under memory pressure and hands them back later.
+    // three.js already calls preventDefault on the loss and rebuilds its GL
+    // state on restore, but it does not draw — it assumes an every-frame render
+    // loop will paint the next one. This one only paints when something moves,
+    // and a restore moves nothing, so without this the background comes back
+    // blank and stays blank until a colour transition happens to wake it.
+    const onContextRestored = () => {
+      needsRender = true;
+    };
+    canvas.addEventListener("webglcontextrestored", onContextRestored);
 
     tick();
 
@@ -366,6 +464,8 @@ void main(){
       cancelAnimationFrame(raf);
       window.removeEventListener("pointermove", onPointerMove);
       window.removeEventListener("resize", resize);
+      document.removeEventListener("visibilitychange", onVisibility);
+      canvas.removeEventListener("webglcontextrestored", onContextRestored);
 
       mesh.geometry.dispose();
       material.dispose();

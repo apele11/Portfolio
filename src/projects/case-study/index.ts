@@ -9,7 +9,6 @@ export {
   Figure,
   ScrollFigure,
   VideoFigure,
-  SplineFigure,
   MediaRow,
   MediaGroup,
   MediaCompare,

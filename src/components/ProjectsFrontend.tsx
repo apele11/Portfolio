@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, type RefObject } from "react";
 import type { CSSProperties } from "react";
 import type * as THREE from "three";
 import CoverMedia from "./CoverMedia";
+import { useIsMobile, VIEWPORT_HEIGHT } from "../viewport";
 
 interface ShaderUniforms {
   uColor1: { value: THREE.Color };
@@ -38,6 +39,7 @@ export default function ProjectsFrontend({
 }: ProjectsFrontendProps) {
   const [visibleProjectId, setVisibleProjectId] = useState<string | null>(null);
   const sectionRefs = useRef<{ [key: string]: HTMLElement | null }>({});
+  const isMobile = useIsMobile();
 
   // Use scroll event listener with requestAnimationFrame to detect the active section
   useEffect(() => {
@@ -136,7 +138,11 @@ export default function ProjectsFrontend({
           ref={(el) => {
             if (el) sectionRefs.current[project.id] = el;
           }}
-          style={{ ...fullScreenProjectSection, cursor: "pointer" }}
+          style={{
+            ...fullScreenProjectSection,
+            ...(isMobile ? mobileProjectSection : null),
+            cursor: "pointer",
+          }}
           onClick={() => onProjectSelect?.(project.id)}
         >
           {/* Use project colors if defined, otherwise fall back to hero base colors */}
@@ -153,17 +159,35 @@ export default function ProjectsFrontend({
           )}
 
           {/* Cover — a still or a looping clip, depending on the project */}
-          <CoverMedia
-            src={project.coverUrl}
-            alt={project.header}
-            style={projectImage}
-          />
-          {/* Text Content */}
-          <div style={textContent}>
-            <p style={eyebrow}>{project.eyebrow}</p>
-            <h2 style={title}>{project.header}</h2>
-            <p style={subtitle}>{project.subtitle}</p>
-          </div>
+          {isMobile ? (
+            <>
+              <CoverMedia
+                src={project.coverUrl}
+                alt={project.header}
+                style={{ ...projectImage, ...mobileProjectImage }}
+              />
+              {/* Text Content */}
+              <div style={mobileTextContent}>
+                <p style={{ ...eyebrow, ...mobileEyebrow }}>{project.eyebrow}</p>
+                <h2 style={{ ...title, ...mobileTitle }}>{project.header}</h2>
+                <p style={{ ...subtitle, ...mobileSubtitle }}>{project.subtitle}</p>
+              </div>
+            </>
+          ) : (
+            <>
+              <CoverMedia
+                src={project.coverUrl}
+                alt={project.header}
+                style={projectImage}
+              />
+              {/* Text Content */}
+              <div style={textContent}>
+                <p style={eyebrow}>{project.eyebrow}</p>
+                <h2 style={title}>{project.header}</h2>
+                <p style={subtitle}>{project.subtitle}</p>
+              </div>
+            </>
+          )}
         </section>
       ))}
     </>
@@ -191,7 +215,6 @@ function UpdateColorsScript({
           }
         }
       });
-      console.log("Updated project colors:", colors);
     }
   }, [colors, uniformsRef, isVisible]);
 
@@ -204,8 +227,59 @@ function UpdateColorsScript({
 const fullScreenProjectSection: CSSProperties = {
   position: "relative",
   width: "100%",
-  height: "100vh",
+  height: VIEWPORT_HEIGHT,
   overflow: "hidden",
+};
+
+/**
+ * The desktop composition puts a 30%-wide text column across the left edge of a
+ * half-width cover. Taken literally to a phone that collapses: at 375px the
+ * cover lands at 188x106 and the column becomes a 113px ribbon of wrapped words
+ * lying on top of it.
+ *
+ * So the phone drops the straddle rather than scaling it down. The cover goes
+ * full-column and the whole text block sits below it, off the image entirely —
+ * nothing overlaps, and the type gets the full column width to set in.
+ */
+const mobileProjectSection: CSSProperties = {
+  display: "flex",
+  flexDirection: "column",
+  alignItems: "center",
+  justifyContent: "center",
+  gap: "1rem",
+  padding: "0 var(--layout-gutter)",
+  boxSizing: "border-box",
+};
+
+const mobileProjectImage: CSSProperties = {
+  position: "static",
+  top: "auto",
+  left: "auto",
+  transform: "none",
+  width: "100%",
+  maxWidth: "560px",
+};
+
+/** Plain block under the cover — same column width, so the two edges line up. */
+const mobileTextContent: CSSProperties = {
+  width: "100%",
+  maxWidth: "560px",
+  display: "flex",
+  flexDirection: "column",
+  gap: "8px",
+};
+
+const mobileEyebrow: CSSProperties = {
+  fontSize: "13px",
+  letterSpacing: "0.18em",
+};
+
+const mobileTitle: CSSProperties = {
+  fontSize: "clamp(26px, 7.5vw, 38px)",
+};
+
+const mobileSubtitle: CSSProperties = {
+  fontSize: "15px",
 };
 
 const projectImage: CSSProperties = {

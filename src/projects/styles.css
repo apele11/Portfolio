@@ -216,6 +216,8 @@
 }
 
 @media (max-width: 768px) {
+  /* Two-up, same as the base rule — restated here so the intent survives if the
+     base ever changes for wide screens. */
   .hero-metadata {
     grid-template-columns: repeat(2, 1fr);
   }
@@ -242,10 +244,14 @@
     gap: 30px;
   }
 
+  /* Stays two-up. Dropping to one column stacked four labelled blocks — Role,
+     Type, Date, Skills — into 460px, 41% of the whole hero and more than the
+     title, subtitle and cover combined. Type and Date are one line each, so a
+     single column spends a full block's height on a single word. The `font-size`
+     that used to sit here was inert: both children set absolute sizes. */
   .hero-metadata {
-    grid-template-columns: 1fr;
-    gap: 20px;
-    font-size: 0.5rem;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 20px 16px;
   }
 
   .title {

@@ -5,7 +5,6 @@ import {
   Band,
   Steps,
   VideoFigure,
-  SplineFigure,
   MediaRow,
   MediaGroup,
   PaperDiagram,
@@ -21,15 +20,6 @@ import {
 
 const ASSETS = "/assets/compressed/NewBusiness";
 const LIVE_SITE = "https://new-biz-case-studies.vercel.app/presentation";
-/** The pitch site's hero scene, exported from Spline and served from its CDN. */
-const HERO_SCENE = "https://prod.spline.design/hwzfhJT6iymGJQU9/scene.splinecode";
-/**
- * The published scene's camera sits at y -2313, below its own artwork (the blobs
- * span -2171..-298), which leaves ~63% of the frame empty at any aspect ratio.
- * -1234 is the artwork's centre, so the frame fills. Remove this once the camera
- * is reframed in Spline itself.
- */
-const HERO_SCENE_CAMERA_Y = -1234;
 
 interface ProjectLayoutProps {
   project: ProjectDetail;
@@ -63,12 +53,13 @@ export default function NewBusinessLayout({ project, onBack }: ProjectLayoutProp
           />
 
           <MediaRow firstWide className="cs-reel__row">
-            <SplineFigure
-              scene={HERO_SCENE}
-              cameraY={HERO_SCENE_CAMERA_Y}
+            {/* A recording of the hero rather than the live Spline scene. The
+                runtime pulls WASM from Spline's CDN and struggled on phones;
+                this is the same footage the project thumbnail uses. */}
+            <VideoFigure
+              src={`${ASSETS}/heroSection.mp4`}
               poster={`${ASSETS}/NB-Hero.webp`}
-              alt="The pitch site's hero — the agency wordmark over an animated Spline 3D scene"
-              caption="Hero — Spline 3D, running live"
+              caption="Hero — Spline 3D scene"
             />
             <VideoFigure
               src={`${ASSETS}/Case-Study-Inside-Video.mp4`}

@@ -1,5 +1,4 @@
-import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
-import type { Application } from "@splinetool/runtime";
+import { useEffect, useRef, type CSSProperties, type ReactNode } from "react";
 
 /**
  * How much room a piece of media gets *inside a section body*, where the
@@ -261,119 +260,11 @@ export function VideoFigure({ src, caption, label, poster, size, showProgress, c
   );
 }
 
-interface SplineFigureProps {
-  /** URL of the exported Spline scene (a .splinecode file). */
-  scene: string;
-  /** Still of the same scene: holds the frame until it is live, and stands in for it entirely under reduced motion. */
-  poster: string;
-  alt: string;
-  caption?: string;
-  label?: string;
-  size?: MediaSize;
-  /**
-   * Y position to move the scene's camera to once it has loaded — a stopgap for
-   * a published scene whose camera is framed off its own artwork, which shows up
-   * as dead space in the frame. Prefer fixing the framing in Spline: this is a
-   * magic number measured against one published version, and a re-publish that
-   * moves the camera or the artwork silently invalidates it.
-   */
-  cameraY?: number;
-}
-
-/**
- * A live Spline scene, in place of a screenshot of one. The runtime is heavy
- * and pulls WASM from Spline's CDN, so it is loaded on two conditions: the
- * figure has been scrolled to, and the reader has not asked for reduced motion.
- * Until then — and if anything fails — the poster is what shows, which means
- * the figure is never broken, only sometimes static.
- */
-export function SplineFigure({ scene, poster, alt, caption, label, size, cameraY }: SplineFigureProps) {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [ready, setReady] = useState(false);
-
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    // A continuously animating 3D scene is precisely what this preference is
-    // asking us not to start.
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-
-    let app: Application | null = null;
-    let cancelled = false;
-
-    const io = new IntersectionObserver(
-      (entries) => {
-        if (!entries.some((entry) => entry.isIntersecting)) return;
-        io.disconnect();
-
-        // Dynamic import so the runtime lands in its own chunk instead of the
-        // main bundle — a reader who never reaches this figure never pays for it.
-        void import("@splinetool/runtime")
-          .then(async ({ Application: SplineApp }) => {
-            if (cancelled) return;
-            const instance = new SplineApp(canvas);
-            // Re-publishing a Spline scene reuses the same URL, so a cached copy
-            // would keep serving the old scene until the browser felt like
-            // revalidating. `no-cache` forces a conditional request: a 304 when
-            // the scene is unchanged, the new scene the moment it isn't.
-            await instance.load(scene, undefined, { cache: "no-cache" });
-            if (cancelled) {
-              instance.dispose();
-              return;
-            }
-
-            if (cameraY !== undefined) {
-              // Named "Camera" in the scene — if it is ever renamed this misses
-              // and the scene simply keeps its published framing.
-              const camera = instance.findObjectByName("Camera");
-              if (camera) {
-                camera.position.y = cameraY;
-              } else if (import.meta.env.DEV) {
-                console.warn("[SplineFigure] no object named 'Camera' to reframe:", scene);
-              }
-            }
-
-            app = instance;
-            setReady(true);
-          })
-          .catch((error) => {
-            // The poster stays, so the figure degrades instead of breaking. But
-            // a silently static 3D scene is indistinguishable from a slow one,
-            // so make the reason findable while developing.
-            if (import.meta.env.DEV) {
-              console.warn("[SplineFigure] scene failed to load:", scene, error);
-            }
-          });
-      },
-      { rootMargin: "200px" }
-    );
-
-    io.observe(canvas);
-    return () => {
-      cancelled = true;
-      io.disconnect();
-      app?.dispose();
-    };
-  }, [scene, cameraY]);
-
-  return (
-    <figure className={`cs-figure${sizeClass(size)}`}>
-      {label ? <p className="cs-media-label">{label}</p> : null}
-      <div className="cs-spline" data-ready={ready ? "true" : "false"}>
-        <img src={poster} alt={alt} loading="lazy" />
-        <canvas ref={canvasRef} aria-hidden="true" />
-      </div>
-      {caption ? <figcaption>{caption}</figcaption> : null}
-    </figure>
-  );
-}
-
 /**
  * Figures across the measure, portrait cells so each one reads as an excerpt
  * lifted out of the page rather than a shrunken copy of it. `firstWide` gives
  * the first child double width — for a row where one piece of evidence (e.g.
- * a live 3D scene) outweighs the rest.
+ * the hero clip) outweighs the rest.
  */
 export function MediaRow({
   children,

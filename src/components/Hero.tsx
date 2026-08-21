@@ -20,13 +20,9 @@ function resetShaderColors(uniformsRef: MutableRefObject<ShaderUniforms | null>)
         const uniform = uniformsRef.current[colorKey];
         if (uniform && "value" in uniform) {
           uniform.value.setStyle(hexColor);
-          console.log(
-            `[HERO] Set ${colorKey} to ${hexColor}`
-          );
         }
       }
     });
-    console.log("[HERO] Reset shader colors to default");
   }
 }
 
@@ -41,7 +37,6 @@ export default function Hero({
 
   // Reset colors when component mounts
   useEffect(() => {
-    console.log("[HERO] Component mounted");
     if (uniformsRef) {
       resetShaderColors(uniformsRef);
     }
@@ -49,41 +44,40 @@ export default function Hero({
 
   // Listen to scroll events to handle color reset and transitions
   useEffect(() => {
-    const handleScroll = () => {
-      const currentScrollY = window.scrollY;
-      
-      console.log(`[HERO] Scroll Y: ${currentScrollY}`);
+    // Coalesced into a frame. This handler re-renders the hero through two
+    // pieces of state, and a phone fires scroll far faster than it paints, so
+    // running it raw meant several React renders per frame on the one device
+    // least able to afford them.
+    let frame = 0;
 
-      // Reset colors when at top of page (within 50px of top)
-      if (currentScrollY < 50) {
-        console.log("[HERO] At top of page, resetting colors");
-        if (uniformsRef) {
+    const handleScroll = () => {
+      if (frame) return;
+
+      frame = requestAnimationFrame(() => {
+        frame = 0;
+        const currentScrollY = window.scrollY;
+
+        // Reset colors when at top of page (within 50px of top)
+        if (currentScrollY < 50 && uniformsRef) {
           resetShaderColors(uniformsRef);
         }
-      }
 
-      // Calculate opacity and scale based on scroll position
-      // Hero section is 100vh tall, so fade out/scale as user scrolls
-      const maxScroll = window.innerHeight * 0.7; // Faster transition over less scroll distance
-      const scrollProgress = Math.min(currentScrollY / maxScroll, 1); // 0 to 1
-      
-      const newOpacity = Math.max(1 - scrollProgress, 0);
-      const newScale = Math.max(1 - scrollProgress * 0.1, 0.9); // Scale from 1 to 0.9
-      
-      setOpacity(newOpacity);
-      setScale(newScale);
-      
-      console.log(
-        `[HERO] Scroll progress: ${scrollProgress.toFixed(2)}, Opacity: ${newOpacity.toFixed(2)}, Scale: ${newScale.toFixed(2)}`
-      );
+        // Calculate opacity and scale based on scroll position
+        // Hero section is one viewport tall, so fade out/scale as user scrolls
+        const maxScroll = window.innerHeight * 0.7; // Faster transition over less scroll distance
+        const scrollProgress = Math.min(currentScrollY / maxScroll, 1); // 0 to 1
+
+        setOpacity(Math.max(1 - scrollProgress, 0));
+        setScale(Math.max(1 - scrollProgress * 0.1, 0.9)); // Scale from 1 to 0.9
+      });
     };
 
+    handleScroll();
     window.addEventListener("scroll", handleScroll, { passive: true });
-    console.log("[HERO] Scroll listener attached");
 
     return () => {
+      cancelAnimationFrame(frame);
       window.removeEventListener("scroll", handleScroll);
-      console.log("[HERO] Scroll listener removed");
     };
   }, [uniformsRef]);
   return (
@@ -123,7 +117,10 @@ const content: CSSProperties = {
 };
 
 const heading: CSSProperties = {
-  fontSize: "6rem",
+  // Was a flat 6rem. At 375px that wrapped "EMILY APEL" onto two 96px lines and
+  // spent 240px of an 812px-tall screen on the wordmark alone; the floor here
+  // keeps it to one line down to about 340px of width.
+  fontSize: "clamp(2.75rem, 12.5vw, 6rem)",
   fontWeight: 700,
   marginBottom: "0.5rem",
   margin: 0,
@@ -156,8 +153,10 @@ const downArrowWrap: CSSProperties = {
 };
 
 const downArrowIcon: CSSProperties = {
-  width: "85px",
-  height: "180px",
+  // Same 85:180 ratio the desktop size draws, scaled down for narrow screens
+  // where a 180px-tall arrow is a fifth of the viewport.
+  width: "clamp(44px, 11.5vw, 85px)",
+  height: "clamp(93px, 24.4vw, 180px)",
   display: "block",
   transform: "translateY(15px)",
 };

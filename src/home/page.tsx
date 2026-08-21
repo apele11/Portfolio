@@ -5,6 +5,7 @@ import Hero from "../components/Hero";
 import NavBar from "../components/NavBar";
 import Projects from "../components/Projects";
 import { warmPlaygroundEmbeds } from "../playgroundPrefetch";
+import { VIEWPORT_HEIGHT } from "../viewport";
 
 
 export default function Home() {
@@ -52,7 +53,9 @@ export default function Home() {
       </div>
       <Hero uniformsRef={uniformsRef} />
       <NavBar />
-      <div style={{ position: "relative", zIndex: 2, marginTop: "100vh" }}>
+      {/* Spacer for the fixed hero. Measured in the same unit as the panels
+          below so the first one starts exactly one screen down. */}
+      <div style={{ position: "relative", zIndex: 2, marginTop: VIEWPORT_HEIGHT }}>
         {showProjects ? (
           <Projects uniformsRef={uniformsRef} onProjectSelect={handleProjectSelect} />
         ) : null}

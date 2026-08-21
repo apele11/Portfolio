@@ -84,6 +84,58 @@
   -webkit-font-smoothing: antialiased;
 }
 
+/* ── Cool tone ────────────────────────────────────────────────
+   Opt-in skin for a project whose palette is cool. The defaults above are a
+   warm system — cream paper, a warm near-black rule — tuned against New
+   Business's violet, where warm card + violet accent reads as one page. Put a
+   navy/cyan project on that same cream and the diagrams stop looking like this
+   study's artefacts and start looking like another study's, pasted in.
+
+   Everything here is derived from the project's own --c1/--c2 rather than
+   hardcoded, so this is a tone, not a second theme: any cool-palette project
+   opts in with tone="cool" and gets its own colours, not Libre3D's. Set on
+   .case-study by CaseStudyLayout. */
+.case-study[data-tone="cool"] {
+  /* The page ground itself. The default #fffcff is a warm white with a faint
+     magenta cast — invisible on its own, but it is the field every cool card
+     and blue accent above sits on, so it tints the whole study against them.
+     A trace of --c2 turns the same near-white the other way.
+
+     Kept deliberately fainter than --cs-paper below: the card has to lift off
+     this, and the warm system it replaces separates the two by barely 1.03:1 —
+     hue does that work, not lightness. Too much --c2 here closes even that gap
+     and the diagrams sink into the page. */
+  --cs-ground: color-mix(in oklab, var(--c2) 2%, #ffffff);
+  /* Code chips and inset surfaces, off the default cream #f7f5f0. */
+  --cs-surface: color-mix(in oklab, var(--c2) 9%, #fbfcfe);
+  /* Hairline rules, off a warm near-black at 14%. Kept at the same weight so
+     only the hue moves — these are structural, not decorative. */
+  --cs-hair: color-mix(in oklab, var(--c1) 16%, transparent);
+
+  /* --c1 is the darkest of the four and carries the drawing: rule and ink both
+     come off it, mixed toward a cool near-black so a project whose --c1 is pale
+     still lands above the contrast floor rather than drawing in mid-grey. */
+  --cs-paper-rule: color-mix(in oklab, var(--c1) 72%, #0b1020);
+  --cs-paper-ink: color-mix(in oklab, var(--c1) 82%, #0b1020);
+  --cs-paper-muted: color-mix(in oklab, var(--c1) 42%, #5d6675);
+
+  /* The card grounds. --c2 is the saturated accent, so a few percent of it is
+     enough to pull the whole card cool without tinting it into a coloured
+     panel — the card still has to read as paper, just not as cream. */
+  --cs-paper: color-mix(in oklab, var(--c2) 6%, #fcfdff);
+  --cs-paper-box: #ffffff;
+  /* Outputs stay separable from the parts by the same margin the warm tint had,
+     which needs more --c2 here because cyan at 6% barely moves off white. */
+  --cs-paper-tint: color-mix(in oklab, var(--c2) 17%, #fcfdff);
+
+  /* The label rail. The default takes --c1 raw, betting it is the saturated
+     brand colour — true for New Business (#5301d7), false for a project whose
+     --c1 is a near-black navy, which would print the rail as plain black and
+     lose the brand signal entirely. --cs-accent is --c2 already mixed for
+     contrast, so the rail comes out unmistakably the project's blue. */
+  --cs-label: var(--cs-accent);
+}
+
 /* The page. Every block is a flex child, so vertical rhythm is one `gap`
    rather than a margin on each primitive. */
 .cs-study {
@@ -334,32 +386,39 @@
 }
 
 .cs-media-row .cs-figure img,
-.cs-media-row .cs-figure video,
-.cs-media-row .cs-figure .cs-spline {
+.cs-media-row .cs-figure video {
   aspect-ratio: 297 / 355;
   object-fit: cover;
 }
 
 /* Double the width, so the ratio doubles too — keeps this cell's height
-   matched to the portrait cells beside it instead of growing taller. */
-.cs-media-row--first-wide > :first-child .cs-spline {
+   matched to the portrait cells beside it instead of growing taller.
+   Without these arms a clip in this slot falls back to the portrait 297/355
+   above and gets cropped to less than half its frame. */
+.cs-media-row--first-wide > :first-child video,
+.cs-media-row--first-wide > :first-child img {
   aspect-ratio: 594 / 355;
+}
+
+/* The reel's stacking, ungated. Everything else about the reel is a wide-screen
+   concern, but the gap is not: below 721px the rules below don't apply, and an
+   unstyled block .cs-reel left its hero clip and the two-up row beneath it
+   touching at 0px while every neighbouring figure sat 18px apart. */
+.cs-reel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cs-media-gap);
 }
 
 /* ── Hero reel (NewBusinessLayout's opening video + row) ──────
    The full-width video and the row beneath it, held to a fixed share of the
    viewport instead of stacking at their own aspect ratios — two rows of
    media at native/portrait ratios run taller than the screen. Each cell
-   crops via object-fit instead. Gated to wider screens: below it, the
-   .cs-spline children are absolutely positioned and get their height only
-   from `aspect-ratio` — collapsing that to `auto` without a flex-driven
-   parent height to replace it would leave the scene with zero height. Below
+   crops via object-fit instead. Gated to wider screens: the cells here take
+   their height from the flex parent, so `aspect-ratio: auto` is safe. Below
    720px the rows just keep their normal aspect-ratio-driven sizing. */
 @media (min-width: 721px) {
   .cs-reel {
-    display: flex;
-    flex-direction: column;
-    gap: var(--cs-media-gap);
     height: calc(100vh - 4rem);
   }
 
@@ -398,65 +457,18 @@
 
   /* The media element grows to fill the cell; the caption keeps its own
      content height instead of being squeezed to match. */
-  .cs-reel__row .cs-figure .cs-video-wrapper,
-  .cs-reel__row .cs-figure .cs-spline {
+  .cs-reel__row .cs-figure .cs-video-wrapper {
     flex: 1 1 0;
     min-height: 0;
     height: auto;
   }
 
   .cs-reel__row.cs-media-row .cs-figure img,
-  .cs-reel__row.cs-media-row .cs-figure video,
-  .cs-reel__row.cs-media-row .cs-figure .cs-spline {
+  .cs-reel__row.cs-media-row .cs-figure video {
     aspect-ratio: auto;
     height: 100%;
     width: 100%;
     object-fit: cover;
-  }
-}
-
-/* Live Spline scene. The poster and the canvas are stacked in the same frame so
-   the handover when the scene finishes loading is a cross-fade in place, not a
-   reflow — the figure holds its height from first paint. */
-.cs-spline {
-  position: relative;
-  width: 100%;
-  aspect-ratio: 16 / 10;
-  overflow: hidden;
-  background: #0a0a0a;
-}
-
-.cs-spline img,
-.cs-spline canvas {
-  position: absolute;
-  inset: 0;
-  display: block;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  transition: opacity 0.6s ease;
-}
-
-.cs-spline canvas {
-  opacity: 0;
-  /* The scene is the interactive one: let it take the pointer only once it is
-     actually there to receive it. */
-  pointer-events: none;
-}
-
-.cs-spline[data-ready="true"] img {
-  opacity: 0;
-}
-
-.cs-spline[data-ready="true"] canvas {
-  opacity: 1;
-  pointer-events: auto;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .cs-spline img,
-  .cs-spline canvas {
-    transition: none;
   }
 }
 

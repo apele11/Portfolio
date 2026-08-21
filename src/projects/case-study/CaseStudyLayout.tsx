@@ -7,6 +7,13 @@ import "./case-study.css";
 interface CaseStudyLayoutProps {
   project: ProjectDetail;
   onBack: () => void;
+  /**
+   * Which tone the paper diagrams and the label rail are drawn in. The default
+   * warm system assumes a project whose palette is warm or violet; "cool"
+   * re-derives both from the project's own colors for a navy/cyan palette,
+   * against which cream cards read as foreign. See case-study.css.
+   */
+  tone?: "warm" | "cool";
   children: ReactNode;
 }
 
@@ -15,7 +22,7 @@ interface CaseStudyLayoutProps {
  * then the "Editorial × Instrument" spine that the section primitives fill in.
  * The project's four colors become the body's skin via CSS custom properties.
  */
-export default function CaseStudyLayout({ project, onBack, children }: CaseStudyLayoutProps) {
+export default function CaseStudyLayout({ project, onBack, tone = "warm", children }: CaseStudyLayoutProps) {
   useEffect(() => {
     window.scrollTo(0, 0);
   }, []);
@@ -29,10 +36,12 @@ export default function CaseStudyLayout({ project, onBack, children }: CaseStudy
 
   return (
     <>
-      <DefaultProjectHero project={project} onBack={onBack} />
+      {/* The study below opens with its own media, so the phone doesn't need the
+          cover repeated in the masthead. */}
+      <DefaultProjectHero project={project} onBack={onBack} hideCoverOnMobile />
       {/* The case study's ground is paper-white, so the nav has to ink itself
           dark once it scrolls off the hero and over this. See NavBar. */}
-      <main className="project-page case-study" data-nav-ink="dark" style={skin}>
+      <main className="project-page case-study" data-nav-ink="dark" data-tone={tone} style={skin}>
         <div className="cs-study">
           {children}
           <DiscoverMore currentProjectId={project.id} />

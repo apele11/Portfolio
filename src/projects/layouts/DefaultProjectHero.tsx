@@ -2,14 +2,27 @@ import type { CSSProperties } from "react";
 import type { ProjectDetail } from "../../types/project";
 import HeroBackground from "../../components/FragmentShader";
 import CoverMedia from "../../components/CoverMedia";
+import { useIsMobile } from "../../viewport";
 import "../styles.css";
 
 interface DefaultProjectHeroProps {
   project: ProjectDetail;
   onBack: () => void;
+  /**
+   * Drop the cover on phones. Opt-in, because this hero has two jobs: inside a
+   * case study it is a masthead over a body that opens with its own media, and
+   * the cover costs 184px of a 812px screen to repeat what follows. Standalone
+   * — the registry's fallback for projects with no bespoke layout — it *is* the
+   * whole page, and without the cover there is nothing to look at.
+   */
+  hideCoverOnMobile?: boolean;
 }
 
-export default function DefaultProjectHero({ project }: DefaultProjectHeroProps) {
+export default function DefaultProjectHero({ project, hideCoverOnMobile }: DefaultProjectHeroProps) {
+  const isMobile = useIsMobile();
+  // Not display:none — a hidden <video> with preload="auto" still pulls the
+  // whole file down. Leaving it out of the tree is what saves the bytes.
+  const showCover = Boolean(project.coverUrl) && !(hideCoverOnMobile && isMobile);
   return (
     <div className="project-page">
       <div
@@ -85,7 +98,7 @@ export default function DefaultProjectHero({ project }: DefaultProjectHeroProps)
               </div>
             </div>
 
-            {project.coverUrl && (
+            {showCover && (
               <div className="project-image-column hero-image">
                 <CoverMedia src={project.coverUrl} alt={project.header} eager />
               </div>
