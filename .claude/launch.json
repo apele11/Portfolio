@@ -2,15 +2,26 @@
   "version": "0.0.1",
   "configurations": [
     {
+      "name": "dev-attach",
+      "url": "http://localhost:5173",
+      "port": 5173
+    },
+    {
       "name": "dev",
       "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev"],
+      "runtimeArgs": [
+        "run",
+        "dev"
+      ],
       "port": 5173
     },
     {
       "name": "preview",
       "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "preview"],
+      "runtimeArgs": [
+        "run",
+        "preview"
+      ],
       "port": 4173
     }
   ]
