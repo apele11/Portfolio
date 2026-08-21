@@ -23,10 +23,6 @@ dist-ssr
 *.sln
 *.sw?
 
-#Claude
-CLAUDE.md
-**/docs/
-.claude/
 
 # public/assets/ is the drop zone for working originals; only the compressed
 # output is committed. This also stops stray Vite build output (index-*.js,

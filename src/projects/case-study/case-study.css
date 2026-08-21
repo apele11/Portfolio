@@ -255,10 +255,17 @@
   counter-reset: cs-step;
 }
 
+/* The number hangs in an absolutely-positioned ::before rather than sitting in
+   a grid column. Grid was the obvious way to draw this and it is a trap: every
+   child of a grid container becomes a grid item, including each anonymous run
+   of text. A step written as `<strong>Label</strong> — the rest of it` is two
+   items, not one, so the trailing prose was placed in the 34px number column
+   and wrapped to one word per line. Out of flow, the number cannot claim a
+   column, and a step takes any mix of inline and block content. */
 .cs-steps li {
   counter-increment: cs-step;
-  display: grid;
-  grid-template-columns: 34px minmax(0, 1fr);
+  position: relative;
+  padding-left: 34px;
   font-size: clamp(17px, 1.05vw + 8px, 20px);
   line-height: 1.72;
   color: var(--cs-ink-soft);
@@ -266,6 +273,10 @@
 
 .cs-steps li::before {
   content: counter(cs-step) ".";
+  position: absolute;
+  left: 0;
+  /* No `top`: the static position is the first line box, so the number sits on
+     the first line whatever the step contains. */
   font-family: var(--cs-mono);
   font-size: 0.8em;
   color: var(--cs-muted);
@@ -398,6 +409,188 @@
 .cs-media-row--first-wide > :first-child video,
 .cs-media-row--first-wide > :first-child img {
   aspect-ratio: 594 / 355;
+}
+
+/* ── Phone row ────────────────────────────────────────────────
+   A row of phone-portrait captures, for a study whose product is an app. The
+   triptych above crops its cells to landscape, which cuts a 900x1920 phone
+   screen roughly in half — these take the phone's own ratio instead, and the
+   column count is what keeps a frame twice as tall as it is wide from running
+   off the page: three across the full measure is ~300px wide, ~640px tall. */
+.cs-phone-row {
+  display: grid;
+  grid-template-columns: repeat(var(--cs-phones, 3), minmax(0, 1fr));
+  gap: var(--cs-media-gap);
+  align-items: start;
+}
+
+.cs-phone-row .cs-figure img,
+.cs-phone-row .cs-figure video {
+  aspect-ratio: 900 / 1920;
+  object-fit: cover;
+}
+
+/* ── Phone showcase ───────────────────────────────────────────
+   A passage beside one phone. The phone is sized off viewport *height* — the
+   axis a 900x1920 capture actually threatens — while the passage takes the
+   width freed up by not stacking them. 58vh of frame leaves room for the
+   heading, the chip, the controls and the caption inside one screen. */
+.cs-showcase {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: clamp(30px, 4vw, 70px);
+  align-items: center;
+}
+
+/* The passage sets itself as a section body would, so a showcase and a plain
+   section read identically — only the measure differs. */
+.cs-showcase__text > :first-child {
+  margin-top: 0;
+}
+
+.cs-showcase__figure {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+}
+
+.cs-showcase__phone {
+  position: relative;
+  overflow: hidden;
+  width: min(300px, 30vw, calc(0.469 * 58vh));
+  min-width: 190px;
+  aspect-ratio: 900 / 1920;
+  background: #0a0a0a;
+}
+
+.cs-showcase__phone:focus-visible {
+  outline: 2px solid var(--cs-accent);
+  outline-offset: 4px;
+}
+
+/* Every screen laid end to end, moved as one. A track rather than a stack of
+   cross-fading absolutes because the direction of the move then *is* the
+   arithmetic: going to a higher index always travels left, a lower one always
+   right. A cross-fade has no direction of its own, and faking one means
+   tracking which arrow was pressed and seeding the incoming screen's start
+   position before it animates. */
+.cs-showcase__track {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  transition: transform 0.46s cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+.cs-showcase__screen {
+  flex: 0 0 100%;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.cs-showcase__controls {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.cs-showcase__arrow {
+  appearance: none;
+  background: none;
+  border: 1px solid var(--cs-hair);
+  border-radius: 50%;
+  /* 44px is the touch-target floor; these are the only controls on the page a
+     reader has to hit, so they meet it on every viewport rather than only the
+     small ones. */
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  font-family: var(--cs-mono);
+  font-size: 15px;
+  color: var(--cs-ink-soft);
+  transition: border-color 0.2s ease, color 0.2s ease;
+}
+
+.cs-showcase__arrow:hover:not(:disabled) {
+  border-color: var(--cs-accent);
+  color: var(--cs-accent);
+}
+
+/* The track does not wrap, so the ends are real ends. */
+.cs-showcase__arrow:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
+.cs-showcase__arrow:focus-visible,
+.cs-showcase__dot:focus-visible {
+  outline: 2px solid var(--cs-accent);
+  outline-offset: 2px;
+}
+
+.cs-showcase__dots {
+  display: flex;
+  align-items: center;
+  /* The buttons carry their own padding out to a hittable size, so the visual
+     gap between dots is mostly their own box. */
+  gap: 2px;
+}
+
+/* The button is the touch target; the dot is drawn inside it. Sizing the
+   button down to the 8px mark would make it a near-unhittable control. */
+.cs-showcase__dot {
+  appearance: none;
+  padding: 0;
+  border: 0;
+  background: none;
+  width: 24px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+.cs-showcase__dot::after {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  border: 1px solid var(--cs-muted);
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.cs-showcase__dot[data-active="true"]::after {
+  background: var(--cs-accent);
+  border-color: var(--cs-accent);
+}
+
+.cs-showcase__figure figcaption {
+  font-family: var(--cs-sans);
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--cs-muted);
+  text-align: center;
+  max-width: 34ch;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cs-showcase__track {
+    transition: none;
+  }
+}
+
+/* The narrow-viewport variant is a different component, not a reflow of this
+   one — PhoneShowcase swaps to a plain row below the same breakpoint, so all
+   this needs is the single-column shape it sits in. */
+.cs-showcase--stacked {
+  display: flex;
+  flex-direction: column;
+  gap: 26px;
 }
 
 /* The reel's stacking, ungated. Everything else about the reel is a wide-screen
@@ -1092,6 +1285,25 @@
   }
 
   .cs-media-row figcaption {
+    font-size: 12px;
+    line-height: 1.35;
+  }
+
+  /* The triptych's bargain — keep the columns, shrink the gaps — does not
+     survive here. Its cells are landscape excerpts that stay readable when
+     narrow; a phone screen is twice as tall as it is wide, so four across a
+     375px screen is a 74px-wide sliver of an app. Two across is the floor,
+     and a four-cell row becomes a clean 2x2 rather than an orphan. */
+  .cs-phone-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .cs-phone-row .cs-figure {
+    gap: 8px;
+  }
+
+  .cs-phone-row figcaption {
     font-size: 12px;
     line-height: 1.35;
   }

@@ -1,4 +1,4 @@
-import { useEffect, useRef, type CSSProperties, type ReactNode } from "react";
+import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 
 /**
  * How much room a piece of media gets *inside a section body*, where the
@@ -280,12 +280,224 @@ export function MediaRow({
 }
 
 /**
+ * A row of phone-portrait captures, for a study whose product is an app rather
+ * than a site. `MediaRow` crops its cells to landscape, which slices a phone
+ * screen in half — these keep the phone's own ratio, and the column count is
+ * what stops a 2:1-tall frame running off the page.
+ */
+export function PhoneRow({
+  children,
+  columns = 3,
+  className,
+}: {
+  children: ReactNode;
+  /** Cells across the row. Three across the full measure is about 300px wide. */
+  columns?: 2 | 3 | 4;
+  className?: string;
+}) {
+  return (
+    <div
+      className={`cs-phone-row${className ? ` ${className}` : ""}`}
+      style={{ "--cs-phones": columns } as CSSProperties}
+    >
+      {children}
+    </div>
+  );
+}
+
+/**
  * Several figures held together as one piece of evidence. They sit closer to
  * each other than to the sections either side, so a page capture, the details
  * pulled out of it, and the tool behind it read as one exhibit.
  */
 export function MediaGroup({ children }: { children: ReactNode }) {
   return <div className="cs-media-group">{children}</div>;
+}
+
+export interface PhoneScreen {
+  src: string;
+  /** Short name for this screen, on the chip above the frame and the dot's label. */
+  label: string;
+  /** Caption under the frame while this screen is showing. */
+  caption?: string;
+  poster?: string;
+}
+
+/** Live media-query match. Used to pick a layout, not just to skin one. */
+function useMediaQuery(query: string) {
+  const [matches, setMatches] = useState(() => window.matchMedia(query).matches);
+
+  useEffect(() => {
+    const mq = window.matchMedia(query);
+    const onChange = () => setMatches(mq.matches);
+    onChange();
+    mq.addEventListener("change", onChange);
+    return () => mq.removeEventListener("change", onChange);
+  }, [query]);
+
+  return matches;
+}
+
+/** Below this the screens sit side by side; above it they share one frame. */
+const SHOWCASE_SIDE_BY_SIDE = "(min-width: 900px)";
+
+/**
+ * A passage beside a phone, with the other screens a swipe away.
+ *
+ * The layout it replaces — a passage above a row of phones — fails on a large
+ * screen for a reason worth recording: a 900x1920 capture at any readable
+ * width is taller than the text it illustrates, so the prose has scrolled off
+ * the top by the time the phone is in view. Stacking spends vertical space,
+ * the scarce axis, to leave horizontal space empty, the abundant one. Turning
+ * the pair sideways spends the right one, and the phone gets *bigger* rather
+ * than smaller in the process.
+ *
+ * That trade only holds while there is width to spend. On a phone or a tablet
+ * there is none, and the carousel would be pure cost — hiding half the
+ * evidence behind a tap to save room that stacking was going to give away
+ * anyway. So below `SHOWCASE_SIDE_BY_SIDE` this renders the plain row
+ * instead: both screens visible at once, which at that size is the fastest
+ * way to read the section.
+ */
+export function PhoneShowcase({ screens, children }: { screens: PhoneScreen[]; children: ReactNode }) {
+  const [active, setActive] = useState(0);
+  const sideBySide = useMediaQuery(SHOWCASE_SIDE_BY_SIDE);
+  const frameRef = useRef<HTMLDivElement>(null);
+  const videoRefs = useRef<(HTMLVideoElement | null)[]>([]);
+  const onScreen = useRef(false);
+
+  /* Every screen stays mounted so a swipe has nothing to fetch and a clip
+     keeps its place in the loop — but only the one on show plays, and only
+     while the frame is on screen. Several decoding video elements per section
+     is not something to leave running behind a translate. */
+  useEffect(() => {
+    const frame = frameRef.current;
+    if (!frame) return;
+
+    const sync = () => {
+      videoRefs.current.forEach((video, i) => {
+        if (!video) return;
+        if (i === active && onScreen.current) void video.play().catch(() => {});
+        else video.pause();
+      });
+    };
+
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) onScreen.current = entry.isIntersecting;
+        sync();
+      },
+      { threshold: 0.3 }
+    );
+
+    io.observe(frame);
+    sync();
+    return () => io.disconnect();
+  }, [active, sideBySide]);
+
+  /* Clamped, not wrapped. On a track, "next" is always a leftward move and
+     "previous" always a rightward one — wrapping from the last screen back to
+     the first would slide the opposite way to the arrow that asked for it. */
+  const step = (delta: number) =>
+    setActive((i) => Math.min(screens.length - 1, Math.max(0, i + delta)));
+
+  if (!sideBySide) {
+    return (
+      <div className="cs-showcase cs-showcase--stacked">
+        <div className="cs-body cs-showcase__text">{children}</div>
+        <PhoneRow columns={screens.length >= 3 ? 3 : 2}>
+          {screens.map((screen) => (
+            <VideoFigure key={screen.src} src={screen.src} poster={screen.poster} caption={screen.caption} />
+          ))}
+        </PhoneRow>
+      </div>
+    );
+  }
+
+  const current = screens[active];
+
+  return (
+    <div className="cs-showcase">
+      <div className="cs-body cs-showcase__text">{children}</div>
+
+      <figure className="cs-showcase__figure">
+        <p className="cs-media-label">{current.label}</p>
+
+        <div
+          className="cs-showcase__phone"
+          ref={frameRef}
+          role="group"
+          aria-roledescription="carousel"
+          aria-label={`${screens.length} app screens`}
+          tabIndex={0}
+          onKeyDown={(e) => {
+            if (e.key === "ArrowLeft") step(-1);
+            if (e.key === "ArrowRight") step(1);
+          }}
+        >
+          {/* One track carrying every screen, offset by the active index. The
+              direction of travel falls out of the arithmetic, so a swipe always
+              runs the way the arrow pointed without tracking it separately. */}
+          <div className="cs-showcase__track" style={{ transform: `translateX(-${active * 100}%)` }}>
+            {screens.map((screen, i) => (
+              <video
+                key={screen.src}
+                ref={(el) => {
+                  videoRefs.current[i] = el;
+                }}
+                className="cs-showcase__screen"
+                aria-hidden={i !== active}
+                src={screen.src}
+                poster={screen.poster}
+                muted
+                loop
+                playsInline
+                preload="metadata"
+              />
+            ))}
+          </div>
+        </div>
+
+        <div className="cs-showcase__controls">
+          <button
+            type="button"
+            className="cs-showcase__arrow"
+            onClick={() => step(-1)}
+            disabled={active === 0}
+            aria-label="Previous screen"
+          >
+            <span aria-hidden="true">←</span>
+          </button>
+          {/* Dots rather than a bare pair of arrows: an arrow says you may move,
+              the dots say how far there is to go and which one you are on. */}
+          <div className="cs-showcase__dots">
+            {screens.map((screen, i) => (
+              <button
+                key={screen.src}
+                type="button"
+                className="cs-showcase__dot"
+                data-active={i === active}
+                aria-label={screen.label}
+                aria-current={i === active}
+                onClick={() => setActive(i)}
+              />
+            ))}
+          </div>
+          <button
+            type="button"
+            className="cs-showcase__arrow"
+            onClick={() => step(1)}
+            disabled={active === screens.length - 1}
+            aria-label="Next screen"
+          >
+            <span aria-hidden="true">→</span>
+          </button>
+        </div>
+
+        {current.caption ? <figcaption>{current.caption}</figcaption> : null}
+      </figure>
+    </div>
+  );
 }
 
 /** Side-by-side media, e.g. a before/after comparison. Stacks on mobile. */

@@ -11,6 +11,8 @@ export {
   VideoFigure,
   MediaRow,
   MediaGroup,
+  PhoneRow,
+  PhoneShowcase,
   MediaCompare,
   Embed,
   // Paper diagrams
@@ -32,3 +34,5 @@ export {
   ScopeBlock,
   SystemMap,
 } from "./sections";
+
+export type { PhoneScreen } from "./sections";
