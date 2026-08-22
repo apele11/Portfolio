@@ -14,7 +14,6 @@ import {
   PaperGrid,
   PaperArrow,
   PaperTurn,
-  PaperNote,
   Outcome,
 } from "../case-study";
 
