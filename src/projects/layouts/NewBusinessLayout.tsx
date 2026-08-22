@@ -31,15 +31,14 @@ export default function NewBusinessLayout({ project, onBack }: ProjectLayoutProp
     <CaseStudyLayout project={project} onBack={onBack}>
       <CaseStudySection index="/01" label="About">
         <p>
-          <strong>New Business: Case Studies</strong> is the pitch site The Agency at UF sends prospective clients
-          instead of a PDF proposal. One link, built per prospect, opens into a scroll-driven presentation: a Spline 3D
-          hero, the agency's story, the services we provide, then case studies filtered to that prospect's industry and
-          a contact close.
+          <strong>New Business: Case Studies</strong> is the pitch site The Agency at UF sends prospective clients.
+          Each company has its own custom case study collection and URL based on industry and service type. The site 
+          is dynamic and immersive; it opens into a choose your own adventure & scroll-driven presentation that includes: 
+          a Spline 3D hero, The Agency's story, the services provided, curated case studies, and a contact card.
         </p>
         <p>
-          The Agency was losing pitches to digitally-native agencies. The work wasn't the problem — the format was. A
-          PDF in 2026 signals you don't think web-first, and every pitch took days to rebuild by hand. I led design and
-          front-end for a team of eight, replacing that process with a system Sofia, their new business lead, runs
+          Previously, The Agency at UF was using PowerPoint pitch decks which were time consuming, and many agencies had started
+          using web format in the space. Taking this ask head on, I led design and front-end dev team of eight, replacing that process with a system Sofia Portugal, former Accounts & Operations Manager, can run
           herself. Pitches that took days now take under five minutes.
         </p>
       </CaseStudySection>
@@ -76,60 +75,28 @@ export default function NewBusinessLayout({ project, onBack }: ProjectLayoutProp
 
       <CaseStudySection index="/02" label="Experience" title="Experience Flow">
         <p>
-          One link serves two journeys. Sofia adds a prospect in the admin panel and sends the generated URL. The
-          prospect opens it into a presentation that already knows who they are — their name woven into the copy, case
-          studies ordered for their industry. From there they scroll, switch studies on the dial, or jump through the
+          The user flow starts with Sofia adding a potential client in the admin panel and sending them the generated URL.
+          Prospective client opens into a presentation with case studies customized for their industries and services. Example of 
+          services include: media, production, copywriting, graphic design, web development. Industries include: entertainment, food, technology, etc.
+          From there they scroll, switch studies on the dial, or jump through the
           nav bar. Every path stays personalized.
         </p>
       </CaseStudySection>
 
-      <PaperDiagram
-        summary="Sofia fills in three fields → a unique web address is created → she sends it → the prospect opens a pitch already written for them"
-        caption="How one link works — Sofia's two steps in admin, and what the prospect opens."
-      >
+      <PaperDiagram>
         <PaperRow>
           <PaperGroup label="Admin — what Sofia does">
             <PaperBox title="Add a prospect">Their name, company, and which case studies to include.</PaperBox>
             <PaperBox title="Send the link">One web address, unique to that prospect.</PaperBox>
           </PaperGroup>
           <PaperArrow note="email or Slack" />
-          <PaperGroup label="Presentation — what the prospect sees">
-            <PaperBox title="A pitch that knows them">Their name in the copy, case studies for their industry.</PaperBox>
-            <PaperBox title="Wherever they go next">
-              Scroll, switch studies, or jump by the nav — it stays theirs.
+          <PaperGroup label="Presentation — what the potential client sees">
+            <PaperBox title="Cutomized case studies">Tour The Agency's previous work that relates to their industry & service ask. </PaperBox>
+            <PaperBox title="Choose your own adventure">
+              Scroll, switch studies, or jump by the nav bar; explore via prioritizing interests.
             </PaperBox>
-          </PaperGroup>
-        </PaperRow>
-      </PaperDiagram>
-
-      <CaseStudySection index="/03" label="Core features" title="A Link That Knows Who Opened It">
-        <p>
-          I built the link system so each prospect gets a web address of their own, generated from their name and
-          company. On open, the presentation fetches that record and weaves the prospect into the copy — so the pitch
-          reads as though it was written for them, because it was. Building one takes three fields and a few seconds,
-          against the days it used to take to rebuild a deck by hand.
-        </p>
-      </CaseStudySection>
-
-      <PaperDiagram
-        dense
-        summary="Three fields → a unique web address → sent by email or Slack → opened in a browser → a pitch written for them"
-        caption="One link, end to end — created in seconds, personalized by the time it opens."
-      >
-        <PaperRow variant="phases">
-          <PaperGroup label="01 · Sofia creates it">
-            <PaperBox title="Enter name and company">Two fields in the admin panel.</PaperBox>
-            <PaperBox title="Get a web address">Unique to this one prospect.</PaperBox>
-          </PaperGroup>
-          <PaperArrow />
-          <PaperGroup label="02 · The prospect opens it">
-            <PaperBox title="They click the link">No login, no download, no PDF.</PaperBox>
-            <PaperBox title="The site looks them up">It finds the pitch built for that address.</PaperBox>
-          </PaperGroup>
-          <PaperArrow />
-          <PaperGroup label="03 · The pitch is theirs">
-            <PaperBox title="Their industry up front" tint>
-              Case studies chosen when the link was made.
+            <PaperBox title="Contact The Agency at UF">
+              Reach out to us via contact form auto sends email & social media links.
             </PaperBox>
           </PaperGroup>
         </PaperRow>
@@ -173,15 +140,14 @@ export default function NewBusinessLayout({ project, onBack }: ProjectLayoutProp
         caption="The hover accordion that replaced it — progressive disclosure, more to discover."
       />
 
-      <CaseStudySection index="/04" label="Implementation" title="One Component System, Eight Case Studies">
+      <CaseStudySection index="/03" label="Implementation" title="Using a Modular System">
         <p>
-          Eight team members each owned a case study, and quality drifted. Rather than review eight bespoke builds, I
-          designed one skeleton and moved every difference into props.
+          Unifying the project across team member pages by creating a resusable component system and a consistent user experience.
         </p>
         <Steps>
           <li>
             <div>
-              <p>Four shared components live in a single module — nothing is duplicated per study.</p>
+              <p>Four shared components live in a single module.</p>
               <div className="cs-code-row">
                 <code>CaseStudyHero</code>
                 <code>CaseStudyHeader</code>
@@ -190,23 +156,20 @@ export default function NewBusinessLayout({ project, onBack }: ProjectLayoutProp
               </div>
             </div>
           </li>
-          <li>Each study passes its own color, copy, media, and section order. Nothing is rewritten.</li>
+          <li>Each study passes its own color, copy, media, and section order.</li>
           <li>
-            Spacing, animation timing, and interaction patterns come from the shared layer, so a minimalist study and an
-            image-heavy one still read as one site.
+            Spacing, animation timing, and sizing come from the shared layer.
           </li>
-          <li>I designed and coded one study end to end as the reference build.</li>
+          <li>Started with designing and coding one study end to end as the reference build.</li>
         </Steps>
       </CaseStudySection>
 
       <PaperDiagram
         dense
-        summary="Four components → eight sets of props → eight presentations that still read as one site"
-        caption="One skeleton, eight case studies — same four components, different props."
       >
         <PaperGroup label="One shared skeleton — every case study is built from these four">
           <PaperGrid>
-            <PaperBox title="Hero">Banner with the client's and the agency's logos.</PaperBox>
+            <PaperBox title="Hero">Banner with the client's and The Agency's logos.</PaperBox>
             <PaperBox title="Header">Section title, in that client's color.</PaperBox>
             <PaperBox title="Content">Layout wrapper for any kind of section.</PaperBox>
             <PaperBox title="Footer">The closing call to action.</PaperBox>
@@ -215,20 +178,16 @@ export default function NewBusinessLayout({ project, onBack }: ProjectLayoutProp
 
         <PaperTurn />
 
-        <PaperNote center>
-          each study passes its own color, copy, media and section order — nothing is rewritten
-        </PaperNote>
-
         <PaperGrid>
           <PaperBox title="Uber" tint />
           <PaperBox title="The Bartram" tint />
           <PaperBox title="Seagram's" tint />
-          <PaperBox title="+ five more" tint />
+          <PaperBox title="+ more" tint />
         </PaperGrid>
       </PaperDiagram>
 
       <Outcome label="Outcome" href={LIVE_SITE} cta="See the live site — best on desktop">
-        Eight case studies on one system. A pitch that took days now takes under five minutes.
+        All case studies on one immersive site. A pitch that took days now takes under five minutes!
       </Outcome>
     </CaseStudyLayout>
   );
