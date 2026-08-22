@@ -9,40 +9,28 @@ import type { Project } from "../types/project";
 
 export const PROJECTS_SNAPSHOT: Project[] = [
   {
-    "id": "1782961131323",
-    "eyebrow": "React, Web App",
-    "header": "New Business Case Studies",
-    "subtitle": "The Agency at University of Florida",
-    "coverUrl": "/assets/compressed/NewBusiness/heroSection.mp4",
-    "order": 0,
-    "color1": "#5301d7",
-    "color2": "#aa9aff",
-    "color3": "#c4b9f8",
-    "color4": "#000000"
-  },
-  {
     "id": "1785288163186",
     "eyebrow": "Three.js, Web App",
     "header": "Libre3D",
     "subtitle": "Open-Source alternative to Spline designed for the Agency at UF creative team",
     "coverUrl": "/assets/compressed/Libre3D/Libre3D-Cover.webp",
-    "order": 1,
+    "order": 0,
     "color1": "#111627",
     "color2": "#2094C5",
     "color3": "#4f8cff",
     "color4": "#2d5eb0"
   },
   {
-    "id": "1769497710828",
-    "eyebrow": "Unity, VR",
-    "header": "VR: Classroom",
-    "subtitle": "Exposure Therapy Simulation for Students with Sensory Disorders",
-    "coverUrl": "/assets/compressed/VRClassroom/VR-Classroom-Cover.webp",
-    "order": 2,
-    "color1": "#1b2b41",
-    "color2": "#a28f6e",
-    "color3": "#693e30",
-    "color4": "#696969"
+    "id": "1782961131323",
+    "eyebrow": "React, Web App",
+    "header": "New Business Case Studies",
+    "subtitle": "The Agency at University of Florida",
+    "coverUrl": "/assets/compressed/NewBusiness/heroSection.mp4",
+    "order": 1,
+    "color1": "#5301d7",
+    "color2": "#aa9aff",
+    "color3": "#c4b9f8",
+    "color4": "#000000"
   },
   {
     "id": "1777141672057",
@@ -50,11 +38,23 @@ export const PROJECTS_SNAPSHOT: Project[] = [
     "header": "LockedIn",
     "subtitle": "A study spot finder for students at the University of Florida",
     "coverUrl": "/assets/compressed/LockedIn/LockedInCover.webp",
-    "order": 3,
+    "order": 2,
     "color1": "#eb8e4b",
     "color2": "#ffc670",
     "color3": "#ffe3bd",
     "color4": "#fffbed"
+  },
+  {
+    "id": "1769497710828",
+    "eyebrow": "Unity, VR",
+    "header": "VR: Classroom",
+    "subtitle": "Exposure Therapy Simulation for Students with Sensory Disorders",
+    "coverUrl": "/assets/compressed/VRClassroom/VR-Classroom-Cover.webp",
+    "order": 3,
+    "color1": "#1b2b41",
+    "color2": "#a28f6e",
+    "color3": "#693e30",
+    "color4": "#696969"
   },
   {
     "id": "1769542388823",
@@ -82,4 +82,4 @@ export const PROJECTS_SNAPSHOT: Project[] = [
   }
 ];
 
-export const SNAPSHOT_GENERATED_AT = "2026-08-14T20:19:21.812Z";
+export const SNAPSHOT_GENERATED_AT = "2026-08-22T03:09:56.925Z";
