@@ -12,6 +12,12 @@ dist
 dist-ssr
 *.local
 
+# Firebase CLI's local deploy cache (path, mtime, hash per file). Nothing reads
+# it but the CLI, which rebuilds it on every `firebase deploy`, and CI never
+# sees it — action-hosting-deploy uploads independently. Tracked, it just
+# rewrote itself into the diff after each deploy.
+.firebase/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
@@ -29,3 +35,9 @@ dist-ssr
 # hashed fonts) from being tracked if dist/ is ever copied in here again.
 public/assets/*
 !public/assets/compressed/
+
+# Vite's entry point is the root index.html, and the build writes the real one
+# into dist/ *after* copying public/ across. A public/index.html is therefore
+# only ever stale build output: it shadows nothing, but it does send anyone
+# editing the <head> to the wrong file. One was committed here once already.
+public/index.html

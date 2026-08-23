@@ -6,6 +6,7 @@ import type { User } from "firebase/auth";
 import { doc, collection, getDocs, setDoc, deleteDoc } from "firebase/firestore";
 import type { ProjectDetail } from "../types/project";
 import { normalizeProjectDetail } from "../data/projects";
+import { defaultDateRange } from "../data/projectDate";
 import CoverMedia from "./CoverMedia";
 import "./Admin.css";
 
@@ -124,7 +125,7 @@ export default function Admin({ onClose }: { onClose?: () => void }) {
       role: [],
       type: "Solo",
       skills: [],
-      date: new Date().toLocaleDateString(),
+      date: defaultDateRange(),
       order: projects.length, // Assign default order
     };
     setSelectedProject(newProject);
@@ -172,7 +173,13 @@ export default function Admin({ onClose }: { onClose?: () => void }) {
 
     try {
       setLoading(true);
-      await setDoc(doc(db, "projects", updatedProject.id), updatedProject);
+      // Firestore rejects `undefined` outright, and the optional fields
+      // (teamSize) are undefined on every document that has not set one — so
+      // drop those keys rather than writing them.
+      const payload = Object.fromEntries(
+        Object.entries(updatedProject).filter(([, value]) => value !== undefined)
+      );
+      await setDoc(doc(db, "projects", updatedProject.id), payload);
 
       // Update local state
       const existingIndex = projects.findIndex(p => p.id === updatedProject.id);
@@ -370,6 +377,8 @@ function ProjectEditor({
     date: project.date || "",
     role: project.role || [],
     skills: project.skills || [],
+    team: project.team || [],
+    teamSize: project.teamSize,
   });
 
   const handleFieldChange = <K extends keyof ProjectDetail>(field: K, value: ProjectDetail[K]) => {
@@ -496,12 +505,25 @@ function ProjectEditor({
         </div>
 
         <div className="form-group">
+          <label>Team size</label>
+          <input
+            type="number"
+            min={1}
+            value={formData.teamSize ?? ""}
+            onChange={(e) =>
+              handleFieldChange("teamSize", e.target.value ? Number(e.target.value) : undefined)
+            }
+            placeholder="e.g., 8 — renders as “Group of 8”"
+          />
+        </div>
+
+        <div className="form-group">
           <label>Date</label>
           <input
             type="text"
             value={formData.date}
             onChange={(e) => handleFieldChange("date", e.target.value)}
-            placeholder="e.g., March, 2022"
+            placeholder="e.g., Aug - Dec, 2025 — always a start and an end"
           />
         </div>
       </div>
@@ -549,6 +571,31 @@ function ProjectEditor({
         ))}
         <button onClick={() => handleAddArrayItem("skills")} className="btn-secondary">
           Add Skill
+        </button>
+      </div>
+
+      <div className="editor-section">
+        <h3>Team</h3>
+        {/* Optional. Naming people derives the headcount, so filling this in
+            makes the "Team size" field above redundant. */}
+        {(formData.team ?? []).map((member, index) => (
+          <div key={index} className="array-item">
+            <input
+              type="text"
+              value={member}
+              onChange={(e) => handleArrayFieldChange("team", index, e.target.value)}
+              placeholder="e.g., Ada Lovelace"
+            />
+            <button
+              onClick={() => handleRemoveArrayItem("team", index)}
+              className="btn-danger-small"
+            >
+              Remove
+            </button>
+          </div>
+        ))}
+        <button onClick={() => handleAddArrayItem("team")} className="btn-secondary">
+          Add Team Member
         </button>
       </div>
 

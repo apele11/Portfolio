@@ -14,10 +14,8 @@ interface ShaderUniforms {
 
 export default function Projects({
   uniformsRef,
-  onProjectSelect,
 }: {
   uniformsRef?: RefObject<ShaderUniforms | null>;
-  onProjectSelect?: (projectId: string) => void;
 } = {}) {
   // Seeded from the build-time snapshot so the grid paints real cards on the
   // first frame instead of a spinner. Firestore is still the source of truth —
@@ -73,7 +71,6 @@ export default function Projects({
       projects={projects}
       loading={loading}
       uniformsRef={uniformsRef}
-      onProjectSelect={onProjectSelect}
     />
   );
 }

@@ -3,6 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import NavBar from "../components/NavBar";
 import { fetchProjectById } from "../data/projects";
 import { resolveProjectLayout } from "../data/registry";
+import { useSeo, clampDescription, SITE_TITLE, SITE_DESCRIPTION } from "../seo";
 import type { ProjectDetail } from "../types/project";
 import "./styles.css";
 
@@ -64,6 +65,17 @@ export default function ProjectPage({ projectId, onBack }: ProjectPageProps) {
 			isActive = false;
 		};
 	}, [resolvedProjectId]);
+
+	// Above the early returns, because hooks cannot be called conditionally. The
+	// canonical is the case study's own URL from the first render — the URL is
+	// what gets indexed, regardless of whether the document has arrived yet.
+	useSeo({
+		title: project ? `${project.header} — Emily Apel` : SITE_TITLE,
+		description: project
+			? clampDescription(project.subtitle || project.fullDescription)
+			: SITE_DESCRIPTION,
+		path: resolvedProjectId ? `/projects/${resolvedProjectId}` : "/",
+	});
 
 	if (loading) {
 		return (

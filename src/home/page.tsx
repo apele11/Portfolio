@@ -5,6 +5,7 @@ import Hero from "../components/Hero";
 import NavBar from "../components/NavBar";
 import Projects from "../components/Projects";
 import { warmPlaygroundEmbeds } from "../playgroundPrefetch";
+import { useSeo, SITE_TITLE, SITE_DESCRIPTION } from "../seo";
 import { VIEWPORT_HEIGHT } from "../viewport";
 
 
@@ -12,6 +13,10 @@ export default function Home() {
   const uniformsRef = useRef(null);
   const navigate = useNavigate();
   const [showProjects, setShowProjects] = useState(true);
+
+  // Restores the home tags after a client-side navigation back from a route
+  // that set its own; index.html only covers the first paint.
+  useSeo({ title: SITE_TITLE, description: SITE_DESCRIPTION, path: "/" });
 
   // Warm the playground embeds once the page has gone quiet, so the ~1s
   // third-party load is already paid for if the user heads there next.
@@ -42,10 +47,6 @@ export default function Home() {
     return () => window.removeEventListener("keydown", handleKeyDown, true);
   }, []);
 
-  const handleProjectSelect = (projectId: string) => {
-    navigate(`/projects/${projectId}`);
-  };
-
   return (
     <>
       <div id={"hero"}>
@@ -57,7 +58,7 @@ export default function Home() {
           below so the first one starts exactly one screen down. */}
       <div style={{ position: "relative", zIndex: 2, marginTop: VIEWPORT_HEIGHT }}>
         {showProjects ? (
-          <Projects uniformsRef={uniformsRef} onProjectSelect={handleProjectSelect} />
+          <Projects uniformsRef={uniformsRef} />
         ) : null}
       </div>
     </>

@@ -12,6 +12,7 @@ npm run preview   # serve the production build locally
 npm run deploy    # build + firebase deploy (Firebase Hosting, project portfolio-cf811)
 npm run assets    # compress dropped media into public/assets/compressed/ (see below)
 npm run snapshot  # regenerate src/data/projects.snapshot.ts from Firestore (see below)
+npm run og        # re-render public/og-image.jpg, the social preview card (see below)
 ```
 
 There is no test runner configured. `npm run build` runs the TypeScript project build (`tsc -b`) as a strict typecheck gate before Vite bundles, so a green build means types pass.
@@ -35,12 +36,23 @@ Page components follow a `src/<route>/page.tsx` convention (`home/`, `about/`, `
 - `src/firebase.ts` initializes the app from `VITE_FIREBASE_*` env vars (see `.env`) and exports `db`. Firebase Analytics is dynamically imported from an idle callback in prod only — keep it off the critical path.
 - Projects are documents in the `projects` collection. `src/types/project.ts` defines `ProjectDetail` (full doc) and `Project` (list-card subset).
 - **All Firestore reads go through the normalizer.** `normalizeProjectDetail()` in `src/data/projects.ts` coerces every field with type guards and fills defaults (including `DEFAULT_COLORS`). Do not consume raw `doc.data()` for a full project — untrusted CMS data must pass through this. `fetchProjectById()` is the single-doc read.
-- The home page project grid (`src/components/Projects.tsx`) is seeded from a build-time snapshot (below), then corrected by a live read: `onSnapshot` in dev so admin edits appear live, a one-shot `getDocs` in prod. The admin panel and single-project page use one-shot `getDoc`/`getDocs`. Projects are always sorted by the numeric `order` field.
+- **Project cards are `<Link>`s, not click handlers.** `ProjectsFrontend` wraps
+each panel in an anchor filling the section. It was a `<div onClick>`, which is
+invisible to a crawler, unreachable by keyboard, silent to a screen reader, and
+cannot be cmd-clicked. It is also the *only* crawl path into the case studies —
+nothing else on the site links to them, and Googlebot follows hrefs rather than
+clicking. Do not revert it to a handler.
+
+The home page project grid (`src/components/Projects.tsx`) is seeded from a build-time snapshot (below), then corrected by a live read: `onSnapshot` in dev so admin edits appear live, a one-shot `getDocs` in prod. The admin panel and single-project page use one-shot `getDoc`/`getDocs`. Projects are always sorted by the numeric `order` field.
 
 ### Build-time project snapshot (`scripts/snapshot-projects.mjs`)
 `npm run snapshot` (also the first step of `npm run build`) dumps the `projects`
-collection to the generated, committed `src/data/projects.snapshot.ts` — the
-card subset only. `Projects.tsx` uses it as its initial state so the grid paints
+collection to two generated, committed files: `src/data/projects.snapshot.ts`
+(the card subset) and `public/sitemap.xml`. The sitemap is generated from the
+same read rather than hand-maintained because project URLs are Firestore
+document ids — nobody keeps a hand-written list of timestamps in step with a
+CMS. It carries no `<lastmod>`, so its content is stable and it does not rewrite
+itself on every build. `Projects.tsx` uses it as its initial state so the grid paints
 real content on the first frame instead of a spinner while Firestore connects.
 
 Firestore remains the source of truth and overwrites the snapshot as soon as the
@@ -50,6 +62,19 @@ stays stale in the snapshot until the next build.
 
 The script fails soft: if Firestore is unreachable it warns, keeps the committed
 snapshot, and lets the build continue. Never hand-edit the generated file.
+
+**It is generated but it must stay committed — do not gitignore it.** `npm run
+dev` is bare `vite` and does not run the snapshot step, so on a fresh clone with
+the file ignored `Projects.tsx` imports a module that does not exist and the dev
+server dies on TS2307. The committed copy is also the fallback when Firestore is
+unreachable: `bail()` writes an *empty* snapshot when there is nothing to keep,
+which exits 0 and ships a blank first paint rather than failing the build.
+
+The script rewrites the file only when the card data actually changes; a
+timestamp-only difference is suppressed. That comparison normalises line endings
+first, because `.gitattributes` (`* text=auto`) plus core.autocrlf puts CRLF in
+the Windows working copy while the script assembles LF — matching them raw made
+the guard miss every time and put the file in the diff after every build.
 
 ### Admin / CMS (`src/components/Admin.tsx`)
 In-app editor for the `projects` collection: create, edit, delete, and reorder (swaps `order` values) documents via `setDoc`/`deleteDoc`. Dev-only — reach it by pressing **Escape** on the home page, or navigating to `/admin`.
@@ -143,6 +168,61 @@ unless `--force`. Other flags: `--dry`, `--keep`, `--only=<substring>`.
 
 Reference assets as `/assets/compressed/<Project>/<file>`. Layouts define a local
 `const ASSETS = "/assets/compressed/<Project>"`.
+
+### Metadata and the social card (`scripts/generate-og-image.mjs`)
+
+`index.html` carries the title, description, canonical, Open Graph / Twitter
+tags, and a `Person` JSON-LD block. **Every URL in those tags is absolute.**
+Link scrapers fetch the tags out of context and do not resolve relative paths,
+so a bare `/og-image.jpg` is the usual reason a preview comes back blank. The
+absolute host is hardcoded to `https://emilyapel.com`, the custom domain. The
+Firebase default (`portfolio-cf811.web.app`) still serves the same content, so
+the canonical tag is what stops the two hosts competing as duplicates — it must
+keep pointing at the custom domain. If the domain ever changes again, these
+strings and `public/sitemap.xml` and `public/robots.txt` all move with it.
+
+`npm run og` regenerates `public/og-image.jpg` (1200×630). The background is
+**not a screenshot** — it is the hero shader ported to CPU in the script and
+evaluated per pixel, so the card and the live page share one definition of the
+gradient. The port mirrors the GLSL closely enough that it has to be kept in
+step by hand: the palette, the warp constants, the contrast ramp, and the four
+colour stops are duplicated. Change the shader, re-run the script.
+
+Two details in the port are load-bearing. The warp's two vector adds must read
+the pre-update vector — unrolling them into sequential scalar updates quietly
+changes the image. And the blend happens in **linear** light, because Three
+sets `outputColorSpace = SRGBColorSpace` and linearises `uColor1`–`uColor4` on
+the way in; blending the hex values directly gives visibly muddier midtones.
+
+Text is composited by ffmpeg's `drawtext` (`ffmpeg-static` ships libfreetype),
+so there is no headless browser or native canvas in the toolchain. `drawtext`
+has no tracking control, so the wordmark's letterspacing is baked into the
+string. Strings are passed as `textfile=` rather than filter arguments, which
+keeps ffmpeg's escaping rules and Windows drive colons out of the picture.
+`scripts/assets/SpaceGrotesk-Regular.ttf` is committed so the render is
+reproducible offline; the app itself still loads Space Grotesk from Google.
+
+**Per-route tags come from `src/seo.ts`, and only reach crawlers that run JS.**
+Firebase rewrites every path to `index.html`, so the served HTML always carries
+the home page's tags. `useSeo({ title, description, path })` rewrites them on
+mount; every route calls it, which is what makes it safe — nothing needs to
+restore the previous route's values on the way out.
+
+The canonical is the load-bearing one. `rel="canonical"` is a directive, so
+leaving every case study pointing at `/` tells Google those URLs are duplicates
+of the home page and should not be indexed separately. Any new route **must**
+call `useSeo`, or it inherits that instruction.
+
+This reaches Googlebot, which renders. It does **not** reach LinkedIn, Slack, X
+or any other scraper that reads raw HTML — those still see the home card for
+every URL, and no amount of client-side tag rewriting changes that. Only
+prerendering does.
+
+The head lives in the **root** `index.html` and nowhere else. A stale
+`public/index.html` from an old Vite build used to sit alongside it; it has been
+deleted and `.gitignore` now blocks the path, because Vite copies `public/` into
+`dist/` before writing the real `index.html` over it — so a file there is always
+either dead or actively shadowing the entry point.
 
 ### Shader background (`src/components/FragmentShader.tsx`)
 **`FragmentShader` must stay a static import — do not `React.lazy` it.** The shader has to exist on React's first render, otherwise there is a window where the canvas has nothing in it, and *anything* put in that window (flat colour placeholder, fading curtain, blank) reads as a flash on refresh. Two earlier attempts at covering that gap were both rejected on those grounds. Keeping the import static means the page has one paint: `first-paint` and `first-contentful-paint` land on the same millisecond.

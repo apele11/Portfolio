@@ -1,7 +1,15 @@
 import NavBar from "../components/NavBar";
 import HeroBackground from "../components/FragmentShader";
+import { useSeo } from "../seo";
 
 export default function AboutPage() {
+  useSeo({
+    title: "About — Emily Apel",
+    description:
+      "Emily Apel is a computer science student at the University of Florida working across design and code — public-sector projects, a co-founded nonprofit arts program, and creative technology.",
+    path: "/about",
+  });
+
   return (
     <div style={{ position: "relative", minHeight: "100vh" }}>
       <HeroBackground />

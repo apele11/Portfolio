@@ -3,6 +3,8 @@ import type { ProjectDetail } from "../../types/project";
 import HeroBackground from "../../components/FragmentShader";
 import CoverMedia from "../../components/CoverMedia";
 import { useIsMobile } from "../../viewport";
+import { formatProjectDate } from "../../data/projectDate";
+import { describeTeam } from "../../data/projectTeam";
 import "../styles.css";
 
 interface DefaultProjectHeroProps {
@@ -50,6 +52,8 @@ export default function DefaultProjectHero({ project, hideCoverOnMobile }: Defau
             <div className="project-content-column">
               <p className="subtitle">{project.fullDescription}</p>
 
+              {/* Role → Skills → Type → Date: what she did, what she did it
+                  with, who she did it with, and when. */}
               <div className="hero-metadata">
                 <div className="metadata-section">
                   <h4>Role</h4>
@@ -59,41 +63,22 @@ export default function DefaultProjectHero({ project, hideCoverOnMobile }: Defau
                 </div>
 
                 <div className="metadata-section">
-                  <h4>Type</h4>
-                  <p>{project.type}</p>
-                </div>
-
-                <div className="metadata-section">
-                  <h4>Date</h4>
-                  <p>
-                    {(() => {
-                      if (!project.date) return "";
-
-                      const formatSingleDate = (dateStr: string) => {
-                        const d = new Date(dateStr.trim());
-                        if (isNaN(d.getTime())) return dateStr.trim(); // Fallback
-                        const month = d.toLocaleDateString("en-US", { month: "long", timeZone: "UTC" });
-                        const year = d.toLocaleDateString("en-US", { year: "numeric", timeZone: "UTC" });
-                        return `${month}, ${year}`;
-                      };
-
-                      // Support "date1 - date2" or "date1 to date2" formats
-                      if (project.date.includes(" - ")) {
-                        return project.date.split(" - ").map(formatSingleDate).join(" – ");
-                      } else if (project.date.toLowerCase().includes(" to ")) {
-                        return project.date.split(/ to /i).map(formatSingleDate).join(" – ");
-                      }
-
-                      return formatSingleDate(project.date);
-                    })()}
-                  </p>
-                </div>
-
-                <div className="metadata-section">
                   <h4>Skills</h4>
                   {project.skills.map((skill, index) => (
                     <p key={index}>{skill}</p>
                   ))}
+                </div>
+
+                <div className="metadata-section">
+                  <h4>Type</h4>
+                  {describeTeam(project).map((line, index) => (
+                    <p key={index}>{line}</p>
+                  ))}
+                </div>
+
+                <div className="metadata-section">
+                  <h4>Date</h4>
+                  <p>{formatProjectDate(project.date)}</p>
                 </div>
               </div>
             </div>

@@ -2,6 +2,7 @@ import { useState } from "react";
 import NavBar from "../components/NavBar";
 import { PLAYGROUND_ITEMS } from "../data/playground";
 import type { PlaygroundItem } from "../data/playground";
+import { useSeo } from "../seo";
 import "./Playground.css";
 
 /**
@@ -31,6 +32,13 @@ function EmbedFrame({ item }: { item: PlaygroundItem }) {
 }
 
 export default function PlaygroundPage() {
+  useSeo({
+    title: "Playground — Emily Apel",
+    description:
+      "Interactive WebGL and Three.js experiments by Emily Apel — shaders, generative graphics, and real-time rendering sketches, running live in the browser.",
+    path: "/playground",
+  });
+
   return (
     <div
       style={{

@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, type RefObject } from "react";
 import type { CSSProperties } from "react";
+import { Link } from "react-router-dom";
 import type * as THREE from "three";
 import CoverMedia from "./CoverMedia";
 import { useIsMobile, VIEWPORT_HEIGHT } from "../viewport";
@@ -28,14 +29,12 @@ interface ProjectsFrontendProps {
   projects: Project[];
   loading: boolean;
   uniformsRef?: RefObject<ShaderUniforms | null>;
-  onProjectSelect?: (projectId: string) => void;
 }
 
 export default function ProjectsFrontend({
   projects,
   loading,
   uniformsRef,
-  onProjectSelect,
 }: ProjectsFrontendProps) {
   const [visibleProjectId, setVisibleProjectId] = useState<string | null>(null);
   const sectionRefs = useRef<{ [key: string]: HTMLElement | null }>({});
@@ -138,12 +137,7 @@ export default function ProjectsFrontend({
           ref={(el) => {
             if (el) sectionRefs.current[project.id] = el;
           }}
-          style={{
-            ...fullScreenProjectSection,
-            ...(isMobile ? mobileProjectSection : null),
-            cursor: "pointer",
-          }}
-          onClick={() => onProjectSelect?.(project.id)}
+          style={fullScreenProjectSection}
         >
           {/* Use project colors if defined, otherwise fall back to hero base colors */}
           {uniformsRef && (
@@ -158,6 +152,20 @@ export default function ProjectsFrontend({
             />
           )}
 
+          {/* The whole panel is one anchor, not a div with an onClick. A click
+              handler is invisible to a crawler, unreachable by keyboard, silent
+              to a screen reader, and cannot be cmd-clicked into a new tab; an
+              anchor is all four for free. It is also the only crawl path into
+              the case studies that exists — nothing else on the site links to
+              them, and Googlebot follows hrefs, it does not click. */}
+          <Link
+            to={`/projects/${project.id}`}
+            aria-label={project.header}
+            style={{
+              ...projectLink,
+              ...(isMobile ? mobileProjectSection : null),
+            }}
+          >
           {/* Cover — a still or a looping clip, depending on the project */}
           {isMobile ? (
             <>
@@ -188,6 +196,7 @@ export default function ProjectsFrontend({
               </div>
             </>
           )}
+          </Link>
         </section>
       ))}
     </>
@@ -229,6 +238,22 @@ const fullScreenProjectSection: CSSProperties = {
   width: "100%",
   height: VIEWPORT_HEIGHT,
   overflow: "hidden",
+};
+
+/**
+ * The anchor fills the panel so the click target is unchanged from when this
+ * was a whole-section onClick. `inset: 0` on a positioned parent with no
+ * padding makes it coincident with the old containing block, so the absolutely
+ * positioned cover and text column land exactly where they did before; on
+ * mobile the flex column that used to sit on the section is spread on top.
+ */
+const projectLink: CSSProperties = {
+  position: "absolute",
+  inset: 0,
+  display: "block",
+  color: "inherit",
+  textDecoration: "none",
+  cursor: "pointer",
 };
 
 /**

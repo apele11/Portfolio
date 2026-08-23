@@ -36,6 +36,10 @@ export function normalizeProjectDetail(projectId: string, rawData: unknown): Pro
     type: toString(data.type),
     skills: toStringArray(data.skills),
     date: toString(data.date),
+    team: toStringArray(data.team),
+    // Absent rather than 0 when unset, so the hero can tell "nobody entered a
+    // headcount" apart from a document that genuinely claims one.
+    teamSize: typeof data.teamSize === "number" && data.teamSize > 0 ? data.teamSize : undefined,
     order: typeof data.order === "number" ? data.order : 0,
   };
 }

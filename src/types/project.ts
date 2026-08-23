@@ -12,7 +12,15 @@ export interface ProjectDetail {
   role: string[]; // ["UX Designer", "Developer", ...]
   type: string; // "Group", "Solo", etc.
   skills: string[]; // ["Unity 3D", "React", ...]
-  date: string; // "March, 2022"
+  date: string; // "Aug - Dec, 2025" — a start and an end; see src/data/projectDate.ts
+  /**
+   * Who else built it. "Group" on its own is true of nearly every project here
+   * and so tells a reader nothing; a headcount is the part worth reading. Set
+   * `teamSize` when the number is all that matters, `team` to name people —
+   * naming them derives the count, so the two are never both required.
+   */
+  team?: string[]; // ["Ada Lovelace", ...]
+  teamSize?: number; // 8
   order?: number;
 }
 

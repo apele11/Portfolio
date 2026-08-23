@@ -101,20 +101,21 @@ export default function NewBusinessLayout({ project, onBack }: ProjectLayoutProp
         </PaperRow>
       </PaperDiagram>
 
-      <Band>
-        <h2>A Hero That Reveals Itself On Scroll</h2>
+      <CaseStudySection index="/03" label="Core features" title="A Hero That Reveals Itself On Scroll">
         <p>
           I built the hero as a Spline 3D scene the prospect can move the camera through. GSAP drives a scroll-scrubbed
           master timeline: checkpoints fire as the section travels the viewport, and overlapping tweens — the video
           scaling to full screen while the TV overlay fades — make the reveal feel directed rather than mechanical.
         </p>
-        <VideoFigure
-          src={`${ASSETS}/TV-transition.mp4`}
-          caption="The TV reveal — the hero video scales to full screen as the overlay fades."
-        />
-      </Band>
+      </CaseStudySection>
+
+      <VideoFigure
+        src={`${ASSETS}/TV-transition.mp4`}
+        caption="The TV reveal — the hero video scales to full screen as the overlay fades."
+      />
 
       <Band>
+        <h2>A Contact Section, Not a New Page</h2>
         <p>
           Every transition earns its place. Moving between sections triggers choreographed reveals, and the Contact
           section flows out of the last case study to close the loop rather than arriving as a new page.
