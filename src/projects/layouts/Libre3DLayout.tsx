@@ -21,14 +21,16 @@ import {
 } from "../case-study";
 
 /*
- * DRAFT — the prose below is written from the project README and is meant to be
- * edited, not shipped as-is. [Bracketed blanks] are the things the README does
- * not answer: team size, dates, role split, repo URL.
+ * Written against the shipped editor as of August 2026 — cross-checked against
+ * the repo's docs/project_index.md and docs/architecture.md rather than the
+ * README, which still describes the pre-publish, pre-materials build.
  *
- * This study closes on STATUS, not an outcome. Libre3D is in progress — the
- * editor foundation is working, materials/lighting/import are not built. Saying
- * so plainly is stronger than implying a finish that hasn't happened; revisit
- * the close once there is a shipped milestone to point at.
+ * This study closes on STATUS, not an outcome, because Libre3D is still in
+ * progress. Keep it that way until there is a public release to point at.
+ *
+ * The repo is private, so the Outcome CTA is deliberately absent — a "see the
+ * repo" link that 404s reads worse than no link. Restore `href`/`cta` on
+ * <Outcome> pointing at github.com/The-Agency-at-UF/Libre3D once it is public.
  *
  * Media: the files in MEDIA do not exist yet. Drop raw captures into
  * public/assets/Libre3D/ and run `npm run assets` — that writes them to
@@ -40,8 +42,6 @@ import {
 const ASSETS = "/assets/compressed/Libre3D";
 /** Stands in for art that has not been shot yet — the one Libre3D asset that exists. */
 const PLACEHOLDER = `${ASSETS}/Libre3D-Cover.webp`;
-/** TODO: public repo, once it is public. */
-const REPO = "https://github.com/[org]/libre3d";
 
 /** Media this layout expects. Names are provisional — rename freely, in pairs. */
 const MEDIA = {
@@ -60,6 +60,12 @@ const MEDIA = {
   /** Stills: edit mode and play mode, same scene, same camera. */
   editMode: `${ASSETS}/Edit-Mode.webp`,
   playMode: `${ASSETS}/Play-Mode.webp`,
+  /** Clip: drag a .glb in, hierarchy populates collapsed, node reattaches in place. */
+  glbImport: `${ASSETS}/GLB-Import.mp4`,
+  /** Still: the Materials panel — colour layer above, lighting layer below. */
+  materials: `${ASSETS}/Materials-Panel.webp`,
+  /** Clip: Share → publish → copy link → open the viewer route on the link. */
+  publish: `${ASSETS}/Publish-Share.mp4`,
 };
 
 interface ProjectLayoutProps {
@@ -80,12 +86,14 @@ export default function Libre3DLayout({ project, onBack }: ProjectLayoutProps) {
           Building 3D for the web today means one of three things: writing custom code, standing up an asset pipeline,
           or accepting a closed-source tool's terms about what you may do with scenes you made yourself. Libre3D is the
           fourth option — a workspace where a non-technical designer assembles a scene, previews it at the size it will
-          actually ship at, and keeps it. [Your role, team size, and how long you have been building it.]
+          actually ship at, and keeps it. I have been building it since June 2026 and have written effectively all of
+          it: architecture, editor, and the publish pipeline behind it.
         </p>
         <p>
-          This study covers the foundation, which works today: scene hierarchy, click-to-select, a move/rotate/scale
-          gizmo, a resizable preview frame, play mode, and grid and background settings. Materials, lighting, and asset
-          import are the next milestones, and are not built yet.
+          What works today: scene hierarchy with drag-to-reparent, click-to-select and box-select, a move/rotate/scale
+          gizmo, a resizable preview frame, play mode, grid and background settings, a layered material inspector, GLB
+          import, and publishing a scene to a shareable link. Lighting beyond a single directional light, and
+          multi-user editing, are still ahead.
         </p>
       </CaseStudySection>
 
@@ -174,8 +182,10 @@ export default function Libre3DLayout({ project, onBack }: ProjectLayoutProps) {
         <h2>Play Mode, Without Losing Your Place</h2>
         <p>
           Same scene, same camera, two views: the workspace you build in, and the clean render your user receives.
-          Switching between them is instant and non-destructive — [confirm: is play mode a route, an overlay, or a
-          render-mode flag? Say which, briefly, because the "without losing state" claim rests on it].
+          Play mode is a flag on the store, not a route — flipping it exports the live scene to an in-memory GLB, hands
+          the blob to <code>&lt;model-viewer&gt;</code>, and parks the editor's render loop until you come back. Your
+          entities are never touched, which is why leaving costs nothing: the object URL is revoked and the loop
+          resumes.
         </p>
         <MediaCompare>
           <Figure src={PLACEHOLDER} alt="The editor with panels, gizmo and grid visible" label="Edit" />
@@ -196,12 +206,100 @@ export default function Libre3DLayout({ project, onBack }: ProjectLayoutProps) {
         </p>
       </Band>
 
-      <CaseStudySection index="/04" label="Implementation" title="A Monorepo Built for the Parts That Don't Exist Yet">
+      <CaseStudySection index="/04" label="Bringing work in" title="An Import That Doesn't Bury You in Bones">
         <p>
-          The editor is one app, but it is not the whole product: a viewer widget and a shared UI package are both
-          coming, and both will need to share types and components with the editor. Retrofitting that later means moving
-          every file. So the workspace is a monorepo from day one — the seams are cut before there is anything to put in
-          them.
+          A designer's first real scene starts with a model somebody else made, so GLB import had to work before
+          anything else was worth building. The naive version walks every node glTF gives you and lists them all — which
+          turns one rigged character into several hundred outliner rows of bones and empty transform groups, and makes
+          the hierarchy panel useless at exactly the moment you first need it.
+        </p>
+        <p>
+          So import prunes as it reads: empty and pass-through nodes are folded away, imported nodes arrive collapsed
+          rather than fully expanded, and materials come across with their glTF <code>alphaMode</code> and{" "}
+          <code>doubleSided</code> flags intact instead of being flattened to a default. Re-importing a single node
+          reattaches it in place with a fade rather than reloading the whole subtree, so correcting one asset does not
+          cost you the scene you had arranged around it.
+        </p>
+      </CaseStudySection>
+
+      <MediaGroup>
+        <VideoFigure
+          src={MEDIA.glbImport}
+          poster={PLACEHOLDER}
+          caption="GLB import — the hierarchy populates pruned and collapsed, not as a wall of bones."
+        />
+        <Figure
+          src={MEDIA.materials}
+          alt="The Materials panel — a colour layer above a lighting layer, each with its own controls"
+          caption="Materials as layers: colour and lighting, each independently toggled."
+        />
+      </MediaGroup>
+
+      <Band>
+        <h2>Materials as Layers, Not a Form</h2>
+        <p>
+          The material inspector is built as a stack of layers rather than one flat panel of every property a Three.js
+          material happens to expose. A colour layer carries fill, opacity, alpha mode, alpha cutoff and double-sidedness;
+          a lighting layer carries the model, and then only the controls that model actually has — roughness and
+          metalness for standard, shininess for phong, emissive for both. Choosing the model first means you are never
+          reading a slider that does nothing.
+        </p>
+      </Band>
+
+      <CaseStudySection index="/05" label="Core feature" title="A Link You Can Send a Client">
+        <p>
+          A scene that only exists in the tab you built it in is a demo, not a deliverable. Publishing is what makes
+          Libre3D usable on client work: the editor exports the scene to GLB, the API mints a scene id and a presigned
+          S3 URL, and the browser uploads the file straight to S3 — the bytes never pass through the server. A DynamoDB
+          record keyed by that id is what the read-only viewer route reads back.
+        </p>
+        <p>
+          The decision that matters is not in that flow, though. Re-publishing reuses the existing scene id rather than
+          minting a new one, so a link a designer already sent a client keeps resolving after the scene behind it is
+          updated. Publishing at all is the engineering; the link surviving the next revision is the product.
+        </p>
+      </CaseStudySection>
+
+      <PaperDiagram
+        summary="Export to GLB → API mints an id and a presigned URL → browser uploads straight to S3 → the viewer route reads the record back"
+        caption="The publish pipeline — the file goes to storage directly, and the id is the thing worth keeping."
+      >
+        <PaperRow variant="phases">
+          <PaperGroup label="01 · In the editor">
+            <PaperBox title="Export the scene">The live scene is serialised to a GLB blob.</PaperBox>
+          </PaperGroup>
+          <PaperArrow note="POST" />
+          <PaperGroup label="02 · The API">
+            <PaperBox title="Mint an id" tint>
+              Reuses the scene's existing id on a re-publish, so the link stays put.
+            </PaperBox>
+            <PaperBox title="Sign an upload URL">A presigned S3 PUT, scoped to that one object key.</PaperBox>
+            <PaperBox title="Write the record">DynamoDB holds where the asset lives.</PaperBox>
+          </PaperGroup>
+          <PaperArrow note="PUT" />
+          <PaperGroup label="03 · Storage and back out">
+            <PaperBox title="Straight to S3">The browser uploads the blob itself — no server in the path.</PaperBox>
+            <PaperBox title="The viewer route">Reads the record by id and renders the asset read-only.</PaperBox>
+          </PaperGroup>
+        </PaperRow>
+
+        <PaperNote center>
+          the id is the durable thing — the asset behind it can be replaced as often as you like
+        </PaperNote>
+      </PaperDiagram>
+
+      <VideoFigure
+        src={MEDIA.publish}
+        poster={PLACEHOLDER}
+        caption="Publish and share — the scene goes up, the link comes back, and it keeps working on the next revision."
+      />
+
+      <CaseStudySection index="/06" label="Implementation" title="A Monorepo Built for the Parts That Don't Exist Yet">
+        <p>
+          The editor is one app, but it is not the whole product: the published viewer wants to become an embeddable
+          widget, and it will need to share types and components with the editor when it does. Retrofitting that later
+          means moving every file. So the workspace is a monorepo from day one — today it holds a single app, and the
+          viewer still lives inside it as a route, but splitting either one out is a move rather than a migration.
         </p>
         <Steps>
           <li>
@@ -209,53 +307,67 @@ export default function Libre3DLayout({ project, onBack }: ProjectLayoutProps) {
               <p>pnpm workspaces and Turborepo manage the packages and cache the task graph.</p>
               <div className="cs-code-row">
                 <code>apps/editor</code>
-                <code>packages/viewer</code>
-                <code>packages/ui</code>
+                <code>/v/:sceneId</code>
               </div>
             </div>
           </li>
           <li>React 19 and TypeScript for the interface; Vite for the dev server and bundling.</li>
-          <li>Three.js renders the WebGL context — the viewport, the grid, and the transform controls.</li>
+          <li>
+            Three.js renders the WebGL context directly — no react-three-fiber. The scene is user data arriving from
+            the store, from GLB imports and from undo, so a reconciler I control beats a declarative one I configure —
+            and geometry, materials and textures have to be disposed by hand or the app leaks GPU memory across edits.
+          </li>
           <li>
             Zustand holds editor state, versioned and persisted to local storage, which is what makes "your work saves
-            itself" true rather than aspirational.
+            itself" true rather than aspirational. Undo is middleware over the same store, so a feature wired through
+            it gets <code>Ctrl+Z</code> for free.
           </li>
+          <li>S3 and DynamoDB behind the publish route, reached through presigned uploads.</li>
         </Steps>
       </CaseStudySection>
 
       <PaperDiagram
         dense
-        summary="One repo → the editor built, the viewer and UI package scaffolded → shared types and components, no migration later"
-        caption="The monorepo — one app built, the seams for the next two already cut."
+        summary="You act → the store changes → the Three.js scene is reconciled to match → the screen redraws"
+        caption="One loop, and everything is a variation on it — which is why undo, autosave and import all cost nothing to support."
       >
-        <PaperGroup label="One workspace, managed by pnpm + Turborepo">
-          <PaperGrid>
-            <PaperBox title="apps/editor" tint>
-              The 3D editor. The only part that is built today.
+        <PaperRow variant="phases">
+          <PaperGroup label="01 · React">
+            <PaperBox title="Panels and viewport">Read the store through selectors, write to it through actions.</PaperBox>
+          </PaperGroup>
+          <PaperArrow />
+          <PaperGroup label="02 · The store">
+            <PaperBox title="One source of truth" tint>
+              Entities, selection, cameras, settings — persisted and undoable.
             </PaperBox>
-            <PaperBox title="packages/viewer">The embeddable widget a finished scene will ship into.</PaperBox>
-            <PaperBox title="packages/ui">Components both surfaces will share.</PaperBox>
-          </PaperGrid>
-        </PaperGroup>
+          </PaperGroup>
+          <PaperArrow />
+          <PaperGroup label="03 · Managers">
+            <PaperBox title="Reconcile, don't mutate">
+              The entity list is diffed against the live meshes: dispose what is gone, create what is new, update the
+              rest.
+            </PaperBox>
+          </PaperGroup>
+        </PaperRow>
 
         <PaperTurn />
 
         <PaperNote center>
-          the editor and the viewer will share types and components — cutting that seam now costs one afternoon, later
-          it costs moving every file
+          the store is the truth and the 3D scene is derived from it — so undo, autosave, GLB import and paste are all
+          the same code path
         </PaperNote>
 
         <PaperGrid>
           <PaperBox title="React 19 + TypeScript" />
           <PaperBox title="Three.js" />
           <PaperBox title="Zustand" />
-          <PaperBox title="Vite" />
+          <PaperBox title="S3 + DynamoDB" />
         </PaperGrid>
       </PaperDiagram>
 
-      <Outcome label="Status" href={REPO} cta="See the repo">
-        The editor foundation works end to end — build a scene, adjust it, preview it at output size. Materials,
-        lighting, and GLTF import are next.
+      <Outcome label="Status">
+        The editor works end to end today — build a scene or import one, give it materials, preview it at output size,
+        and publish it to a link you can send. Richer lighting and multi-user editing are next.
       </Outcome>
     </CaseStudyLayout>
   );

@@ -1,0 +1,142 @@
+/* About page.
+   The layout is one grid so the two columns share rows: the paragraph starts on
+   the tagline's baseline rather than the name's, and the contact block sits
+   under the paragraph — the arrangement the page was designed against.
+
+   Below 768px the same grid collapses to a single column and everything falls
+   in source order (name, tagline, body, contact). The page was previously all
+   inline styles, which cannot carry a media query at all, so the desktop
+   two-column split was also what a phone got. */
+
+.about-page {
+  position: relative;
+  min-height: 100vh;
+  min-height: 100dvh;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  z-index: 2;
+  /* The floor is the nav's own gutter, so once the column stops centering and
+     fills the viewport the name's left edge lands on the wordmark; the old
+     fixed clamp(40px, …) floor overhung it on a phone. */
+  padding: 9rem var(--layout-gutter) 4rem;
+  color: #fff;
+}
+
+/* Above the stacking breakpoint the composition is centred, so the column has
+   its own margin rather than sitting on the nav's gutter — the tablet range is
+   the one that would otherwise run the text to both edges. */
+@media (min-width: 769px) {
+  .about-page {
+    padding-inline: clamp(3rem, 7vw, 7rem);
+  }
+}
+
+.about-grid {
+  display: grid;
+  grid-template-columns: minmax(240px, 0.85fr) minmax(0, 1.15fr);
+  grid-template-areas:
+    "name    ."
+    "tagline body"
+    ".       contact";
+  /* The gap stays close to constant and the surplus width goes to the margins
+     instead: a viewport-scaled gap pushed the two columns to opposite edges of
+     a wide screen and read as two unrelated blocks rather than one spread. */
+  column-gap: clamp(28px, 3vw, 56px);
+  width: 100%;
+  max-width: 940px;
+  margin-inline: auto;
+}
+
+.about-name {
+  grid-area: name;
+  margin: 0;
+  font-family: itc-benguiat-std-book, var(--font-serif);
+  font-size: clamp(40px, 5vw, 72px);
+  font-weight: 400;
+  line-height: 1.05;
+}
+
+.about-tagline {
+  grid-area: tagline;
+  margin-top: 1.75rem;
+  font-style: italic;
+  opacity: 0.85;
+}
+
+.about-body {
+  grid-area: body;
+  margin: 0;
+  margin-top: 1.75rem;
+  font-size: 16px;
+  line-height: 1.7;
+  opacity: 0.9;
+}
+
+.about-contact {
+  grid-area: contact;
+  margin-top: clamp(48px, 10vh, 120px);
+  opacity: 0.85;
+}
+
+.about-contact-email {
+  margin-bottom: 0.5rem;
+}
+
+.about-contact-links {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.about-contact-links a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.about-contact-links span {
+  opacity: 0.6;
+}
+
+@media (max-width: 768px) {
+  .about-page {
+    padding-top: 8rem;
+    padding-bottom: 3rem;
+  }
+
+  .about-grid {
+    grid-template-columns: 1fr;
+    /* Named areas are dropped so the children flow in source order. */
+    grid-template-areas: none;
+  }
+
+  .about-name,
+  .about-tagline,
+  .about-body,
+  .about-contact {
+    grid-area: auto;
+  }
+
+  .about-name {
+    font-size: clamp(36px, 11vw, 48px);
+  }
+
+  .about-tagline {
+    margin-top: 1rem;
+  }
+
+  .about-body {
+    margin-top: 1.25rem;
+    font-size: 17px;
+  }
+
+  .about-contact {
+    margin-top: clamp(40px, 12vh, 88px);
+  }
+
+  /* A phone is a touch target, not a cursor — give the links room. */
+  .about-contact-links a {
+    padding-block: 0.25rem;
+  }
+}
