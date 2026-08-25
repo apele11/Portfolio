@@ -33,6 +33,24 @@
   color: #ff6b6b;
 }
 
+.error-retry {
+  font: inherit;
+  font-size: 15px;
+  color: inherit;
+  padding: 0.7em 1.6em;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  background: transparent;
+  cursor: pointer;
+  /* A stalled read is most likely on a phone, which is also where a mouse-sized
+     target is hardest to hit — 44px is the minimum comfortable touch target. */
+  min-height: 44px;
+}
+
+.error-retry:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
 /* Hero Section */
 .hero-section {
   position: relative;

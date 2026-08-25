@@ -4,6 +4,7 @@ import { collection, getDocs, onSnapshot } from "firebase/firestore";
 import ProjectsFrontend, { type Project } from "./ProjectsFrontend";
 import type * as THREE from "three";
 import { PROJECTS_SNAPSHOT } from "../data/projects.snapshot";
+import { cacheProjects, normalizeProjectDetail } from "../data/projects";
 
 interface ShaderUniforms {
   uColor1: { value: THREE.Color };
@@ -24,10 +25,19 @@ export default function Projects({
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
-    const toList = (docs: { id: string; data: () => unknown }[]) =>
-      (docs.map((doc) => ({ id: doc.id, ...(doc.data() as object) })) as Project[]).sort(
-        (a, b) => (a.order || 0) - (b.order || 0)
-      );
+    // Normalized rather than spread raw, for two reasons: untrusted CMS data is
+    // supposed to go through the normalizer, and normalizing here is what makes
+    // these documents complete enough to cache. This read already pulls every
+    // full project document — it was throwing the detail fields away on the way
+    // to a card, and the project page then re-fetched the same document over
+    // the network. Keeping them means opening a case study renders instantly.
+    const toList = (docs: { id: string; data: () => unknown }[]) => {
+      const details = docs
+        .map((doc) => normalizeProjectDetail(doc.id, doc.data()))
+        .sort((a, b) => (a.order || 0) - (b.order || 0));
+      cacheProjects(details);
+      return details as Project[];
+    };
 
     const onError = (error: Error) => {
       console.error("Error loading projects:", error.message);

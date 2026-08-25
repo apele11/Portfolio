@@ -3,7 +3,13 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/png" href="/EA-Icon.png" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- viewport-fit=cover extends the layout viewport to the physical screen
+         edges. The default (auto) confines the page to the safe area and fills
+         what is left with the page backdrop, which is what reads as grey bars
+         framing the site on iPhone. It is also what makes env(safe-area-inset-*)
+         return anything other than 0, so the gutter rule in index.css depends
+         on this tag being here. -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <!-- The playground embeds are served from this origin. Opening the DNS/TCP/TLS
          connection up front takes that handshake off the critical path whether the
          user lands on /playground directly or navigates there later. -->
@@ -17,8 +23,21 @@
     />
     <meta name="author" content="Emily Apel" />
     <link rel="canonical" href="https://emilyapel.com/" />
-    <!-- Matches uColor1, the darkest stop of the hero shader, so the mobile
-         browser chrome continues the page instead of framing it. -->
+    <!-- Paints the mobile browser chrome, so the bars continue the page instead
+         of framing it in grey. Matches uColor1, the darkest stop of the hero
+         shader, and the html background in index.css — all three have to move
+         together or the seams show.
+
+         This is a flat colour and has to stay one. Two alternatives were tried
+         on an iPhone and neither works:
+           - Removing the tag, to let Safari sample the page. It reads the html
+             background rather than the canvas, so the bars come out one flat
+             colour anyway.
+           - Rewriting content from the live shader palette on every change.
+             The meta element does update, but Safari reads theme-color at load
+             and ignores later mutations, so the bars never repaint.
+         The chrome cannot show the gradient. Only a standalone (Add to Home
+         Screen) display mode removes the bars entirely. -->
     <meta name="theme-color" content="#19053d" />
 
     <!-- Open Graph / Twitter. Every URL here is absolute on purpose: link
