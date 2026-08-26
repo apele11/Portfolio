@@ -46,6 +46,12 @@ function toCard(id, data) {
   for (const key of ["color1", "color2", "color3", "color4"]) {
     if (typeof data[key] === "string") card[key] = data[key];
   }
+  // Only when set — the grid falls back to the defaults in src/data/coverScrim.ts,
+  // and writing them here would churn the file for every document that never
+  // touched the sliders.
+  for (const key of ["scrimStrength", "scrimWidth"]) {
+    if (typeof data[key] === "number" && Number.isFinite(data[key])) card[key] = data[key];
+  }
   return card;
 }
 

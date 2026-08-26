@@ -7,6 +7,11 @@ import { doc, collection, getDocs, setDoc, deleteDoc } from "firebase/firestore"
 import type { ProjectDetail } from "../types/project";
 import { normalizeProjectDetail } from "../data/projects";
 import { defaultDateRange } from "../data/projectDate";
+import {
+  DEFAULT_SCRIM_STRENGTH,
+  DEFAULT_SCRIM_WIDTH,
+  coverScrimGradient,
+} from "../data/coverScrim";
 import CoverMedia from "./CoverMedia";
 import "./Admin.css";
 
@@ -111,11 +116,21 @@ export default function Admin({ onClose }: { onClose?: () => void }) {
   };
 
   const handleAddProject = () => {
+    // One past the highest `order` in use, not `projects.length` — the two only
+    // agree while the sequence is gapless, and it is not: a delete leaves a hole,
+    // so a length-based number collides with a document that already holds it.
+    // Two documents sharing an `order` sort against each other arbitrarily.
+    const nextOrder =
+      projects.reduce((max, project) => Math.max(max, project.order ?? 0), -1) + 1;
+
     const newProject: ProjectDetail = {
       id: new Date().getTime().toString(),
-      eyebrow: "New Project",
-      header: "Project Title",
-      subtitle: "Subtitle",
+      // Seeded empty rather than with sample copy. These strings are written to
+      // Firestore verbatim on save, so a placeholder left unedited ships to the
+      // live grid as the project's actual title; an empty field is visibly unfinished.
+      eyebrow: "",
+      header: "",
+      subtitle: "",
       coverUrl: "",
       fullDescription: "",
       color1: "#05060a",
@@ -125,8 +140,11 @@ export default function Admin({ onClose }: { onClose?: () => void }) {
       role: [],
       type: "Solo",
       skills: [],
+      team: [],
       date: defaultDateRange(),
-      order: projects.length, // Assign default order
+      scrimStrength: DEFAULT_SCRIM_STRENGTH,
+      scrimWidth: DEFAULT_SCRIM_WIDTH,
+      order: nextOrder,
     };
     setSelectedProject(newProject);
     setEditMode(true);
@@ -337,6 +355,7 @@ export default function Admin({ onClose }: { onClose?: () => void }) {
       ) : selectedProject ? (
         <ProjectEditor
           project={selectedProject}
+          isNew={!projects.some((p) => p.id === selectedProject.id)}
           onSave={handleSaveProject}
           onCancel={() => {
             setEditMode(false);
@@ -349,8 +368,115 @@ export default function Admin({ onClose }: { onClose?: () => void }) {
   );
 }
 
+/**
+ * The two knobs on the home grid's cover scrim, over a live preview of the
+ * actual cover at the actual proportions.
+ *
+ * A preview rather than two bare number inputs because the thing being tuned is
+ * "can you read the title" — a judgement nobody can make from `0.82`. The
+ * dummy type is positioned the way ProjectsFrontend positions the real thing
+ * (left 15%, width 30% of a viewport whose cover spans 25%–75%), so what the
+ * strip shows is what the grid does.
+ */
+function CoverScrimField({
+  coverUrl,
+  strength,
+  width,
+  onChange,
+}: {
+  coverUrl: string;
+  strength: number;
+  width: number;
+  onChange: <K extends keyof ProjectDetail>(field: K, value: ProjectDetail[K]) => void;
+}) {
+  const gradient = coverScrimGradient(strength, width);
+  const isVideo = /\.(mp4|webm|mov)$/i.test(coverUrl);
+  const isDefault = strength === DEFAULT_SCRIM_STRENGTH && width === DEFAULT_SCRIM_WIDTH;
+
+  return (
+    <div className="form-group">
+      <label>
+        Cover scrim{" "}
+        <span style={{ fontWeight: 400, opacity: 0.7, fontSize: "12px" }}>
+          — darkens the cover behind the title on the home grid
+        </span>
+      </label>
+
+      <div className="scrim-preview">
+        {coverUrl ? (
+          isVideo ? (
+            <video className="scrim-preview-media" src={coverUrl} muted playsInline autoPlay loop />
+          ) : (
+            <img className="scrim-preview-media" src={coverUrl} alt="" />
+          )
+        ) : (
+          <div className="scrim-preview-media scrim-preview-empty">no cover set</div>
+        )}
+        {gradient && <div className="scrim-preview-scrim" style={{ background: gradient }} />}
+        {/* Stand-in for the grid's text column, at the same relative position. */}
+        <div className="scrim-preview-text">
+          <span className="scrim-preview-eyebrow">EYEBROW</span>
+          <span className="scrim-preview-title">PROJECT TITLE</span>
+          <span className="scrim-preview-subtitle">The subtitle sits here, at 16px.</span>
+        </div>
+      </div>
+
+      <div className="form-row">
+        <div className="form-group">
+          <label>
+            Strength <code>{strength.toFixed(2)}</code>
+          </label>
+          <input
+            type="range"
+            min={0}
+            max={1}
+            step={0.02}
+            value={strength}
+            onChange={(e) => onChange("scrimStrength", Number(e.target.value))}
+          />
+        </div>
+        <div className="form-group">
+          <label>
+            Width <code>{Math.round(width * 100)}%</code>
+          </label>
+          <input
+            type="range"
+            min={0}
+            max={1}
+            step={0.02}
+            value={width}
+            onChange={(e) => onChange("scrimWidth", Number(e.target.value))}
+          />
+        </div>
+      </div>
+
+      <p className="scrim-hint">
+        Width 0 removes the scrim entirely. The text column reaches 40% of the
+        cover, so a width below that leaves the end of the title unprotected.
+        {!isDefault && (
+          <>
+            {" "}
+            <button
+              type="button"
+              className="btn-link"
+              onClick={() => {
+                onChange("scrimStrength", DEFAULT_SCRIM_STRENGTH);
+                onChange("scrimWidth", DEFAULT_SCRIM_WIDTH);
+              }}
+            >
+              Reset to default
+            </button>
+          </>
+        )}
+      </p>
+    </div>
+  );
+}
+
 interface ProjectEditorProps {
   project: ProjectDetail;
+  /** Creating rather than editing — only changes the heading and the save label. */
+  isNew: boolean;
   onSave: (project: ProjectDetail) => void;
   onCancel: () => void;
   loading: boolean;
@@ -358,6 +484,7 @@ interface ProjectEditorProps {
 
 function ProjectEditor({
   project,
+  isNew,
   onSave,
   onCancel,
   loading,
@@ -379,13 +506,18 @@ function ProjectEditor({
     skills: project.skills || [],
     team: project.team || [],
     teamSize: project.teamSize,
+    scrimStrength: project.scrimStrength ?? DEFAULT_SCRIM_STRENGTH,
+    scrimWidth: project.scrimWidth ?? DEFAULT_SCRIM_WIDTH,
   });
 
+  // Functional update, not a spread of the captured `formData`: the scrim's
+  // "Reset to default" sets two fields back to back, and against a snapshot the
+  // second call would be built from the pre-reset state and drop the first.
   const handleFieldChange = <K extends keyof ProjectDetail>(field: K, value: ProjectDetail[K]) => {
-    setFormData({
-      ...formData,
+    setFormData((current) => ({
+      ...current,
       [field]: value,
-    });
+    }));
   };
 
   const handleArrayFieldChange = (field: keyof ProjectDetail, index: number, value: string) => {
@@ -410,7 +542,7 @@ function ProjectEditor({
 
   return (
     <div className="project-editor">
-      <h2>Edit Project</h2>
+      <h2>{isNew ? "New Project" : `Edit ${project.header || "Project"}`}</h2>
 
       <div className="editor-section">
         <h3>Hero Section</h3>
@@ -420,6 +552,7 @@ function ProjectEditor({
             type="text"
             value={formData.eyebrow}
             onChange={(e) => handleFieldChange("eyebrow", e.target.value)}
+            placeholder="e.g., Unity, VR — the tech, shown above the title"
           />
         </div>
 
@@ -429,6 +562,7 @@ function ProjectEditor({
             type="text"
             value={formData.header}
             onChange={(e) => handleFieldChange("header", e.target.value)}
+            placeholder="e.g., Twix Game — also what the layout registry matches on"
           />
         </div>
 
@@ -438,6 +572,7 @@ function ProjectEditor({
             type="text"
             value={formData.subtitle}
             onChange={(e) => handleFieldChange("subtitle", e.target.value)}
+            placeholder="One line describing the project"
           />
         </div>
 
@@ -456,8 +591,16 @@ function ProjectEditor({
             type="text"
             value={formData.coverUrl}
             onChange={(e) => handleFieldChange("coverUrl", e.target.value)}
+            placeholder="/assets/compressed/<Project>/<file>.webp"
           />
         </div>
+
+        <CoverScrimField
+          coverUrl={formData.coverUrl}
+          strength={formData.scrimStrength ?? DEFAULT_SCRIM_STRENGTH}
+          width={formData.scrimWidth ?? DEFAULT_SCRIM_WIDTH}
+          onChange={handleFieldChange}
+        />
 
         <div className="form-row">
           <div className="form-group">
@@ -605,7 +748,7 @@ function ProjectEditor({
           disabled={loading}
           className="btn-primary"
         >
-          {loading ? "Saving..." : "Save Project"}
+          {loading ? "Saving..." : isNew ? "Create Project" : "Save Project"}
         </button>
         <button onClick={onCancel} className="btn-secondary">
           Cancel

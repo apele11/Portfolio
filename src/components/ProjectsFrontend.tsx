@@ -3,6 +3,7 @@ import type { CSSProperties } from "react";
 import { Link } from "react-router-dom";
 import type * as THREE from "three";
 import CoverMedia from "./CoverMedia";
+import { coverScrimGradient } from "../data/coverScrim";
 import { useIsMobile, VIEWPORT_HEIGHT } from "../viewport";
 
 interface ShaderUniforms {
@@ -22,6 +23,8 @@ export interface Project {
   color2?: string;
   color3?: string;
   color4?: string;
+  scrimStrength?: number;
+  scrimWidth?: number;
   order?: number;
 }
 
@@ -130,75 +133,82 @@ export default function ProjectsFrontend({
         />
       )}
 
-      {projects.map((project) => (
-        <section
-          key={project.id}
-          data-project-id={project.id}
-          ref={(el) => {
-            if (el) sectionRefs.current[project.id] = el;
-          }}
-          style={fullScreenProjectSection}
-        >
-          {/* Use project colors if defined, otherwise fall back to hero base colors */}
-          {uniformsRef && (
-            <UpdateColorsScript
-              uniformsRef={uniformsRef}
-              colors={
-                project.color1 && project.color2 && project.color3 && project.color4
-                  ? [project.color1, project.color2, project.color3, project.color4]
-                  : ["#19053d", "#2f7687", "#40aba2", "#6c6597"]
-              }
-              isVisible={visibleProjectId === project.id}
-            />
-          )}
-
-          {/* The whole panel is one anchor, not a div with an onClick. A click
-              handler is invisible to a crawler, unreachable by keyboard, silent
-              to a screen reader, and cannot be cmd-clicked into a new tab; an
-              anchor is all four for free. It is also the only crawl path into
-              the case studies that exists — nothing else on the site links to
-              them, and Googlebot follows hrefs, it does not click. */}
-          <Link
-            to={`/projects/${project.id}`}
-            aria-label={project.header}
-            style={{
-              ...projectLink,
-              ...(isMobile ? mobileProjectSection : null),
+      {projects.map((project) => {
+        const scrim = coverScrimFor(project);
+        return (
+          <section
+            key={project.id}
+            data-project-id={project.id}
+            ref={(el) => {
+              if (el) sectionRefs.current[project.id] = el;
             }}
+            style={fullScreenProjectSection}
           >
-          {/* Cover — a still or a looping clip, depending on the project */}
-          {isMobile ? (
-            <>
-              <CoverMedia
-                src={project.coverUrl}
-                alt={project.header}
-                style={{ ...projectImage, ...mobileProjectImage }}
+            {/* Use project colors if defined, otherwise fall back to hero base colors */}
+            {uniformsRef && (
+              <UpdateColorsScript
+                uniformsRef={uniformsRef}
+                colors={
+                  project.color1 && project.color2 && project.color3 && project.color4
+                    ? [project.color1, project.color2, project.color3, project.color4]
+                    : ["#19053d", "#2f7687", "#40aba2", "#6c6597"]
+                }
+                isVisible={visibleProjectId === project.id}
               />
-              {/* Text Content */}
-              <div style={mobileTextContent}>
-                <p style={{ ...eyebrow, ...mobileEyebrow }}>{project.eyebrow}</p>
-                <h2 style={{ ...title, ...mobileTitle }}>{project.header}</h2>
-                <p style={{ ...subtitle, ...mobileSubtitle }}>{project.subtitle}</p>
-              </div>
-            </>
-          ) : (
-            <>
-              <CoverMedia
-                src={project.coverUrl}
-                alt={project.header}
-                style={projectImage}
-              />
-              {/* Text Content */}
-              <div style={textContent}>
-                <p style={eyebrow}>{project.eyebrow}</p>
-                <h2 style={title}>{project.header}</h2>
-                <p style={subtitle}>{project.subtitle}</p>
-              </div>
-            </>
-          )}
-          </Link>
-        </section>
-      ))}
+            )}
+
+            {/* The whole panel is one anchor, not a div with an onClick. A click
+                handler is invisible to a crawler, unreachable by keyboard, silent
+                to a screen reader, and cannot be cmd-clicked into a new tab; an
+                anchor is all four for free. It is also the only crawl path into
+                the case studies that exists — nothing else on the site links to
+                them, and Googlebot follows hrefs, it does not click. */}
+            <Link
+              to={`/projects/${project.id}`}
+              aria-label={project.header}
+              style={{
+                ...projectLink,
+                ...(isMobile ? mobileProjectSection : null),
+              }}
+            >
+            {/* Cover — a still or a looping clip, depending on the project */}
+            {isMobile ? (
+              <>
+                <CoverMedia
+                  src={project.coverUrl}
+                  alt={project.header}
+                  style={{ ...projectImage, ...mobileProjectImage }}
+                />
+                {/* Text Content */}
+                <div style={mobileTextContent}>
+                  <p style={{ ...eyebrow, ...mobileEyebrow }}>{project.eyebrow}</p>
+                  <h2 style={{ ...title, ...mobileTitle }}>{project.header}</h2>
+                  <p style={{ ...subtitle, ...mobileSubtitle }}>{project.subtitle}</p>
+                </div>
+              </>
+            ) : (
+              <>
+                <CoverMedia
+                  src={project.coverUrl}
+                  alt={project.header}
+                  style={projectImage}
+                />
+                {/* Scrim. Only the desktop composition lays type over the cover,
+                    so only it needs one — the mobile branch puts the text below
+                    the image, where there is nothing to darken. */}
+                {scrim && <div style={scrim} aria-hidden="true" />}
+                {/* Text Content */}
+                <div style={textContent}>
+                  <p style={eyebrow}>{project.eyebrow}</p>
+                  <h2 style={title}>{project.header}</h2>
+                  <p style={subtitle}>{project.subtitle}</p>
+                </div>
+              </>
+            )}
+            </Link>
+          </section>
+        );
+      })}
     </>
   );
 }
@@ -317,6 +327,20 @@ const projectImage: CSSProperties = {
   objectFit: "cover",
   zIndex: 1,
 };
+
+/**
+ * Darkens the part of the cover the text column lies on, so the white type has
+ * something to sit against. Shape and defaults live in src/data/coverScrim.ts;
+ * per-project values come from Firestore and are editable in the admin panel.
+ *
+ * `pointerEvents: none` keeps it out of the anchor's way — the whole panel is
+ * one link, and the scrim covers the middle of it.
+ */
+function coverScrimFor(project: Project): CSSProperties | null {
+  const background = coverScrimGradient(project.scrimStrength, project.scrimWidth);
+  if (!background) return null;
+  return { ...projectImage, zIndex: 1, background, pointerEvents: "none" };
+}
 
 const textContent: CSSProperties = {
   position: "absolute",

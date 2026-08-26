@@ -1,6 +1,7 @@
 import { collection, doc, getDoc, getDocs } from "firebase/firestore";
 import { db } from "../firebase";
 import type { ProjectDetail } from "../types/project";
+import { DEFAULT_SCRIM_STRENGTH, DEFAULT_SCRIM_WIDTH, toScrimNumber } from "./coverScrim";
 
 const DEFAULT_COLORS = {
   color1: "#05060a",
@@ -40,6 +41,8 @@ export function normalizeProjectDetail(projectId: string, rawData: unknown): Pro
     // Absent rather than 0 when unset, so the hero can tell "nobody entered a
     // headcount" apart from a document that genuinely claims one.
     teamSize: typeof data.teamSize === "number" && data.teamSize > 0 ? data.teamSize : undefined,
+    scrimStrength: toScrimNumber(data.scrimStrength, DEFAULT_SCRIM_STRENGTH),
+    scrimWidth: toScrimNumber(data.scrimWidth, DEFAULT_SCRIM_WIDTH),
     order: typeof data.order === "number" ? data.order : 0,
   };
 }

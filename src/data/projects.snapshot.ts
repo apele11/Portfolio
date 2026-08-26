@@ -79,7 +79,19 @@ export const PROJECTS_SNAPSHOT: Project[] = [
     "color2": "#2094C5",
     "color3": "#b4532a",
     "color4": "#d7c8a2"
+  },
+  {
+    "id": "1787715578541",
+    "eyebrow": "Unity",
+    "header": "Twix Awards",
+    "subtitle": "Submission for New Bloods Awards",
+    "coverUrl": "/assets/compressed/TwixGame/TwixGame-cover.webp",
+    "order": 6,
+    "color1": "#7b1415",
+    "color2": "#de1542",
+    "color3": "#eed282",
+    "color4": "#e39a4a"
   }
 ];
 
-export const SNAPSHOT_GENERATED_AT = "2026-08-22T03:09:56.925Z";
+export const SNAPSHOT_GENERATED_AT = "2026-08-26T04:12:22.828Z";

@@ -21,6 +21,13 @@ export interface ProjectDetail {
    */
   team?: string[]; // ["Ada Lovelace", ...]
   teamSize?: number; // 8
+  /**
+   * The cover scrim on the home grid — `scrimStrength` is how dark it gets at
+   * the left edge, `scrimWidth` how far across the cover it reaches, both 0–1.
+   * Absent on most documents; see src/data/coverScrim.ts for the defaults.
+   */
+  scrimStrength?: number;
+  scrimWidth?: number;
   order?: number;
 }
 
@@ -34,5 +41,12 @@ export interface Project {
   color2?: string;
   color3?: string;
   color4?: string;
+  /**
+   * The cover scrim on the home grid — `scrimStrength` is how dark it gets at
+   * the left edge, `scrimWidth` how far across the cover it reaches, both 0–1.
+   * Absent on most documents; see src/data/coverScrim.ts for the defaults.
+   */
+  scrimStrength?: number;
+  scrimWidth?: number;
   order?: number;
 }
