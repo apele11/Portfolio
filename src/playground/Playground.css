@@ -6,38 +6,122 @@
   box-sizing: border-box;
 }
 
-.playground-masonry {
-  column-count: 3;
-  column-gap: 2rem;
+/*
+ * Editorial grid rather than uniform cards: a 4-column track that items span
+ * asymmetrically, so a feature can carry writing at size while the sketches
+ * around it read as a contact sheet. `align-items: start` keeps each row's
+ * items at their own height instead of stretching them to the tallest.
+ */
+.playground-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1.5rem;
+  align-items: start;
   width: 100%;
+  /* Lets a narrow tile back-fill a gap an earlier wide one could not use,
+     so the sheet stays packed instead of stair-stepping. */
+  grid-auto-flow: dense;
 }
 
-@media (max-width: 1100px) {
-  .playground-masonry {
-    column-count: 2;
-    column-gap: 1.5rem;
-  }
-  .playground-container {
-    padding: 2rem;
+
+
+
+
+
+/*
+ * The feature holds two rows open beside it and stretches to fill them, so its
+ * bottom edge lands level with the tile block rather than the two columns
+ * ending at different heights. It takes its height *from* the tiles — giving
+ * the media a fixed height instead is what made the old layout ragged, since a
+ * fixed number cannot know how tall four squares in a 2x2 happen to be.
+ */
+.playground-card {
+  grid-row: span 2;
+  align-self: stretch;
+}
+
+.playground-card .playground-media-wrapper {
+  flex: 1;
+  /* Floor for when there is no tile block to measure against — at the narrow
+     breakpoints below, the feature is on its own row. */
+  min-height: 260px;
+}
+
+/* Bare media on the page ground — no card chrome, so the work sits directly
+   against the black and the feature stays the only object with edges. */
+.playground-tile {
+  position: relative;
+  margin: 0;
+  overflow: hidden;
+  background: #070708;
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.playground-tile:hover {
+  transform: translateY(-4px);
+}
+
+.playground-tile-link {
+  display: block;
+  width: 100%;
+  height: 100%;
+  text-decoration: none;
+}
+
+/* Held back until hover or keyboard focus so it never competes with the image,
+   but still reachable — an unlabelled shader tells a reader nothing. */
+.playground-tile-caption {
+  position: absolute;
+  inset: auto 0 0 0;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  background: linear-gradient(0deg, rgba(0, 0, 0, 0.85) 0%, rgba(0, 0, 0, 0) 100%);
+  opacity: 0;
+  transform: translateY(6px);
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  pointer-events: none;
+}
+
+.playground-tile:hover .playground-tile-caption,
+.playground-tile:focus-within .playground-tile-caption {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Coarse pointers have no hover to reveal it with, so it stays put. */
+@media (hover: none) {
+  .playground-tile-caption {
+    opacity: 1;
+    transform: none;
   }
 }
 
-@media (max-width: 768px) {
-  .playground-masonry {
-    column-count: 1;
-    column-gap: 0;
-  }
-  .playground-container {
-    padding: 1.5rem;
-  }
+.playground-tile-title {
+  font-family: "itc-benguiat-std-book", sans-serif;
+  font-size: 1.05rem;
+  color: #ffffff;
+  letter-spacing: -0.01em;
+}
+
+.playground-tile .playground-tags {
+  margin-bottom: 0;
+}
+
+/* Fills whichever container it is in — the tile's aspect box, or the feature's
+   fixed-height media wrapper. */
+.playground-media {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
 }
 
 .playground-card {
-  break-inside: avoid;
   background: rgba(255, 255, 255, 0.02);
   border: 1px solid rgba(255, 255, 255, 0.07);
   overflow: hidden;
-  margin-bottom: 2rem;
   transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.4s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.3s ease;
   position: relative;
   display: flex;
@@ -145,4 +229,60 @@
 
 .playground-link:hover svg {
   transform: translate(2px, -2px);
+}
+
+/* ---------------------------------------------------------------------------
+ * Responsive overrides.
+ *
+ * These live at the END of the file on purpose. A media query carries no extra
+ * specificity, so a block placed above the base component rules loses to them
+ * on source order and silently does nothing — which is exactly what happened to
+ * the mobile caption rules when they sat at the top.
+ * ------------------------------------------------------------------------- */
+
+@media (max-width: 1100px) {
+  .playground-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .playground-container {
+    padding: 2rem;
+  }
+  /* A 2-span tile would fill the row and swamp the feature at this width. */
+  .playground-tile {
+    grid-column: span 1 !important;
+  }
+  /* Full-width at two columns; there is no column left to stack against. */
+  .playground-card {
+    grid-row: span 1;
+  }
+  .playground-card .playground-media-wrapper {
+    min-height: 400px;
+  }
+}
+
+/*
+ * Mobile keeps the tablet layout: two columns, feature full-width above a pair
+ * of tiles. It does NOT collapse to one column — a single-column sheet turns
+ * four sketches into four full-width scroll stops, and the point of the block
+ * is seeing them together. Only the gutters tighten.
+ */
+@media (max-width: 560px) {
+  .playground-grid {
+    gap: 0.75rem;
+  }
+  .playground-container {
+    padding: 1.5rem 1rem;
+  }
+  .playground-card .playground-media-wrapper {
+    min-height: 300px;
+  }
+  /*
+   * No tile caption at all here. A touch screen has no hover to reveal it with,
+   * so it would sit permanently over a ~165px tile and cover the work it is
+   * meant to label. The <video> keeps its aria-label, so the tile is still
+   * named for a screen reader — this drops the visible layer only.
+   */
+  .playground-tile-caption {
+    display: none;
+  }
 }
