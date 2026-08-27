@@ -38,6 +38,45 @@ function authErrorMessage(error: unknown): string {
   }
 }
 
+/**
+ * Reorder writes touch exactly one field.
+ *
+ * Spreading a whole ProjectDetail here instead sends `teamSize: undefined` for
+ * every document without a headcount — normalizeProjectDetail always emits the
+ * key — and Firestore rejects undefined values outright unless the client opts
+ * into ignoring them. That rejected the whole write, which is why reordering
+ * appeared to work until the next reload and then snapped back.
+ */
+function writeOrder(projectId: string, order: number): Promise<void> {
+  return setDoc(doc(db, "projects", projectId), { order }, { merge: true });
+}
+
+/**
+ * Renumber a sorted list to a contiguous 0..n-1 sequence, reporting which
+ * documents actually moved.
+ *
+ * `order` drifts out of shape on its own: a delete leaves a hole, and the move
+ * handler used to write array indices, which land on numbers other documents
+ * already hold. The duplicate is the damaging half — two documents sharing an
+ * `order` sort against each other arbitrarily, so the grid can reshuffle
+ * between reads and pressing the arrows cannot separate them.
+ *
+ * Pure, and idempotent by construction: run against a clean sequence it reports
+ * nothing changed.
+ */
+function renumberProjects(sorted: ProjectDetail[]): {
+  projects: ProjectDetail[];
+  changed: { id: string; order: number }[];
+} {
+  const changed: { id: string; order: number }[] = [];
+  const projects = sorted.map((project, index) => {
+    if (project.order === index) return project;
+    changed.push({ id: project.id, order: index });
+    return { ...project, order: index };
+  });
+  return { projects, changed };
+}
+
 export default function Admin({ onClose }: { onClose?: () => void }) {
   const [user, setUser] = useState<User | null>(null);
   const [authChecked, setAuthChecked] = useState(false);
