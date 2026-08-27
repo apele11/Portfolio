@@ -77,7 +77,30 @@ export default function Admin({ onClose }: { onClose?: () => void }) {
           normalizeProjectDetail(doc.id, doc.data())
         );
         projectsList.sort((a, b) => (a.order || 0) - (b.order || 0));
-        setProjects(projectsList);
+
+        // Renumbering preserves the sequence, so `ordered` renders identically
+        // to `projectsList` — only the stored numbers differ. Showing it right
+        // away keeps the repair write off the critical path.
+        const { projects: ordered, changed } = renumberProjects(projectsList);
+        setProjects(ordered);
+
+        if (changed.length > 0) {
+          // Self-healing rather than a one-shot script: `order` drifts again
+          // every time a document is deleted, and this is the one place that
+          // reads the whole collection. Once contiguous it finds nothing, so
+          // later opens cost a single pass and no writes.
+          console.info(
+            `Project order is not contiguous — renumbering ${changed.length} document(s).`
+          );
+          try {
+            await Promise.all(changed.map(({ id, order }) => writeOrder(id, order)));
+          } catch (orderError) {
+            // Fall back to the documents' real stored values, so a subsequent
+            // move trades numbers that actually exist in Firestore.
+            console.error("Failed to repair project order:", orderError);
+            setProjects(projectsList);
+          }
+        }
       } catch (error) {
         console.error("Error loading projects:", error);
         const errorMsg = error instanceof Error ? error.message : "Failed to load projects";
@@ -155,26 +178,33 @@ export default function Admin({ onClose }: { onClose?: () => void }) {
     if (direction === "down" && index === projects.length - 1) return;
 
     const newIndex = direction === "up" ? index - 1 : index + 1;
+    const moving = projects[index];
+    const displaced = projects[newIndex];
+
+    // Trade the two documents' *stored* `order` values. Writing array indices
+    // instead only works while the sequence is gapless from zero, and it does
+    // not stay that way — see renumberProjects. The load pass keeps it
+    // contiguous, so these fallbacks should never fire.
+    const movingOrder = moving.order ?? index;
+    const displacedOrder = displaced.order ?? newIndex;
+
+    // Fresh objects: `[...projects]` is a shallow copy, so assigning `order`
+    // through it would mutate the objects still held in the current state.
+    const previous = projects;
     const newProjects = [...projects];
-
-    // Swap the projects in the array
-    const temp = newProjects[index];
-    newProjects[index] = newProjects[newIndex];
-    newProjects[newIndex] = temp;
-
-    // Update the 'order' field for both projects
-    newProjects[index].order = index;
-    newProjects[newIndex].order = newIndex;
+    newProjects[index] = { ...displaced, order: movingOrder };
+    newProjects[newIndex] = { ...moving, order: displacedOrder };
 
     setProjects(newProjects);
 
     try {
       setLoading(true);
-      // Save changes to Firestore
-      await setDoc(doc(db, "projects", newProjects[index].id), { ...newProjects[index] }, { merge: true });
-      await setDoc(doc(db, "projects", newProjects[newIndex].id), { ...newProjects[newIndex] }, { merge: true });
+      await writeOrder(moving.id, displacedOrder);
+      await writeOrder(displaced.id, movingOrder);
     } catch (error) {
       console.error("Error updating project order:", error);
+      // The optimistic swap above is now a lie about what Firestore holds.
+      setProjects(previous);
       alert("Failed to update project order");
     } finally {
       setLoading(false);

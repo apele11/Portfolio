@@ -66,7 +66,7 @@ export const PROJECTS_SNAPSHOT: Project[] = [
     "header": "Sociopolis",
     "subtitle": "Gamified Sociology Learning App  ",
     "coverUrl": "/assets/compressed/Sociopolis/Sociopolis-Cover.webp",
-    "order": 5,
+    "order": 4,
     "color1": "#283d52",
     "color2": "#6297cb",
     "color3": "#cee3f8",
@@ -80,11 +80,13 @@ export const PROJECTS_SNAPSHOT: Project[] = [
     "header": "Jukebox, Open Source Club",
     "subtitle": "A web application that allows group members to queue up songs to their group’s playlist.",
     "coverUrl": "/assets/compressed/Jukebox/Jukebox-OpenSource-Cover.webp",
-    "order": 6,
+    "order": 5,
     "color1": "#05060a",
     "color2": "#2094C5",
     "color3": "#b4532a",
-    "color4": "#d7c8a2"
+    "color4": "#d7c8a2",
+    "scrimStrength": 0.82,
+    "scrimWidth": 0.5
   },
   {
     "id": "1787715578541",
