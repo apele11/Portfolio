@@ -411,6 +411,17 @@
   aspect-ratio: 594 / 355;
 }
 
+/* Square cells. The portrait crop above excerpts a page — it assumes the frame
+   is wider than its subject and that the sides are worth keeping. A 3D viewport
+   capture is the opposite: the subject sits dead centre and the sides are
+   panels. Cropping those to a square drops chrome, not content, and three
+   squares in a row read as one gesture repeated rather than three screens.
+   Doubled class so this beats the portrait default regardless of source order. */
+.cs-media-row.cs-media-row--square .cs-figure img,
+.cs-media-row.cs-media-row--square .cs-figure video {
+  aspect-ratio: 1 / 1;
+}
+
 /* ── Phone row ────────────────────────────────────────────────
    A row of phone-portrait captures, for a study whose product is an app. The
    triptych above crops its cells to landscape, which cuts a 900x1920 phone
@@ -660,6 +671,28 @@
   .cs-reel__row.cs-media-row .cs-figure video {
     aspect-ratio: auto;
     height: 100%;
+    width: 100%;
+    object-fit: cover;
+  }
+
+  /* A square row opts out of the height-sharing above: the whole point of the
+     cell is that it is square, so it takes its height from its own width and
+     the hero flexes into whatever is left rather than the other way round.
+     Must come after the arms above — same specificity, so order decides. */
+  .cs-reel__row.cs-media-row--square {
+    flex: 0 0 auto;
+  }
+
+  .cs-reel__row.cs-media-row--square .cs-figure,
+  .cs-reel__row.cs-media-row--square .cs-figure .cs-video-wrapper {
+    flex: 0 0 auto;
+    height: auto;
+  }
+
+  .cs-reel__row.cs-media-row--square .cs-figure img,
+  .cs-reel__row.cs-media-row--square .cs-figure video {
+    aspect-ratio: 1 / 1;
+    height: auto;
     width: 100%;
     object-fit: cover;
   }

@@ -116,14 +116,16 @@ ${urls}
  * Both sides are normalised to LF before comparing. `.gitattributes` sets
  * `* text=auto` and core.autocrlf is on, so a Windows checkout puts these files
  * on disk with CRLF while the bodies here are assembled with LF. Comparing them
- * raw made this guard miss every time, which is how a timestamp-only rewrite
- * landed in the diff after every single build.
+ * raw made this guard miss every time, which is how a rewrite landed in the
+ * diff after every single build.
+ *
+ * Neither file carries a build stamp any more, so nothing in either body is
+ * generated per-run and byte equality is the whole test. This used to take an
+ * `ignore` pattern to mask a timestamp line out of the comparison; the
+ * timestamp is gone, so the mask is too.
  */
-function writeIfChanged(target, body, label, ignore) {
-  const normalise = (text) => {
-    const lf = text.replace(/\r\n/g, "\n");
-    return ignore ? lf.replace(ignore, "") : lf;
-  };
+function writeIfChanged(target, body, label) {
+  const normalise = (text) => text.replace(/\r\n/g, "\n");
 
   if (existsSync(target) && normalise(readFileSync(target, "utf8")) === normalise(body)) {
     console.log(`[snapshot] unchanged: ${label}`);
@@ -145,17 +147,14 @@ function write(cards) {
 import type { Project } from "../types/project";
 
 export const PROJECTS_SNAPSHOT: Project[] = ${JSON.stringify(cards, null, 2)};
-
-export const SNAPSHOT_GENERATED_AT = ${JSON.stringify(new Date().toISOString())};
 `;
 
-  // The timestamp alone must not count as a change, or every build rewrites it.
-  writeIfChanged(
-    OUT,
-    body,
-    `src/data/projects.snapshot.ts (${cards.length} projects)`,
-    /^export const SNAPSHOT_GENERATED_AT = .*$/m
-  );
+  // No build stamp. Nothing ever imported it, and it was the one line that
+  // changed for reasons unrelated to the content — so any regeneration that
+  // touched the file at all dragged a fresh timestamp into the diff with it.
+  // `git log` already answers when this was last regenerated, and answers it
+  // accurately.
+  writeIfChanged(OUT, body, `src/data/projects.snapshot.ts (${cards.length} projects)`);
 
   writeIfChanged(
     SITEMAP,

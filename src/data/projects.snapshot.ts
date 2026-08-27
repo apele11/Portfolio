@@ -18,7 +18,9 @@ export const PROJECTS_SNAPSHOT: Project[] = [
     "color1": "#111627",
     "color2": "#2094C5",
     "color3": "#4f8cff",
-    "color4": "#2d5eb0"
+    "color4": "#2d5eb0",
+    "scrimStrength": 0.4,
+    "scrimWidth": 0.3
   },
   {
     "id": "1782961131323",
@@ -42,7 +44,9 @@ export const PROJECTS_SNAPSHOT: Project[] = [
     "color1": "#eb8e4b",
     "color2": "#ffc670",
     "color3": "#ffe3bd",
-    "color4": "#fffbed"
+    "color4": "#fffbed",
+    "scrimStrength": 0.54,
+    "scrimWidth": 0
   },
   {
     "id": "1769497710828",
@@ -66,7 +70,9 @@ export const PROJECTS_SNAPSHOT: Project[] = [
     "color1": "#283d52",
     "color2": "#6297cb",
     "color3": "#cee3f8",
-    "color4": "#c3ae73"
+    "color4": "#c3ae73",
+    "scrimStrength": 0.54,
+    "scrimWidth": 0.3
   },
   {
     "id": "1769547665588",
@@ -90,8 +96,8 @@ export const PROJECTS_SNAPSHOT: Project[] = [
     "color1": "#7b1415",
     "color2": "#de1542",
     "color3": "#eed282",
-    "color4": "#e39a4a"
+    "color4": "#e39a4a",
+    "scrimStrength": 0.58,
+    "scrimWidth": 0.28
   }
 ];
-
-export const SNAPSHOT_GENERATED_AT = "2026-08-26T04:12:22.828Z";

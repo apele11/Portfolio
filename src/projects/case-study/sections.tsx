@@ -265,17 +265,32 @@ export function VideoFigure({ src, caption, label, poster, size, showProgress, c
  * lifted out of the page rather than a shrunken copy of it. `firstWide` gives
  * the first child double width — for a row where one piece of evidence (e.g.
  * the hero clip) outweighs the rest.
+ *
+ * `square` swaps the portrait crop for a 1:1 one. Portrait is for excerpting a
+ * page; a square cell is for a capture whose subject sits dead centre in a wide
+ * frame — a 3D viewport, a canvas — where cropping to the middle discards
+ * chrome rather than content, and three of them read as one gesture repeated
+ * rather than three different screens.
  */
 export function MediaRow({
   children,
   firstWide,
+  square,
   className,
 }: {
   children: ReactNode;
   firstWide?: boolean;
+  square?: boolean;
   className?: string;
 }) {
-  const classes = ["cs-media-row", firstWide && "cs-media-row--first-wide", className].filter(Boolean).join(" ");
+  const classes = [
+    "cs-media-row",
+    firstWide && "cs-media-row--first-wide",
+    square && "cs-media-row--square",
+    className,
+  ]
+    .filter(Boolean)
+    .join(" ");
   return <div className={classes}>{children}</div>;
 }
 

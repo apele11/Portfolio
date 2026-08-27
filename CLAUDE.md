@@ -5,7 +5,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Commands
 
 ```bash
-npm run dev       # Vite dev server (this is where /admin is available; see below)
+npm run dev       # snapshot (via predev), then Vite dev server (/admin lives here; see below)
 npm run build     # tsc -b (typecheck) then vite build → dist/
 npm run lint      # eslint over the repo
 npm run preview   # serve the production build locally
@@ -46,7 +46,7 @@ clicking. Do not revert it to a handler.
 The home page project grid (`src/components/Projects.tsx`) is seeded from a build-time snapshot (below), then corrected by a live read: `onSnapshot` in dev so admin edits appear live, a one-shot `getDocs` in prod. The admin panel and single-project page use one-shot `getDoc`/`getDocs`. Projects are always sorted by the numeric `order` field.
 
 ### Build-time project snapshot (`scripts/snapshot-projects.mjs`)
-`npm run snapshot` (also the first step of `npm run build`) dumps the `projects`
+`npm run snapshot` dumps the `projects`
 collection to two generated, committed files: `src/data/projects.snapshot.ts`
 (the card subset) and `public/sitemap.xml`. The sitemap is generated from the
 same read rather than hand-maintained because project URLs are Firestore
@@ -54,6 +54,14 @@ document ids — nobody keeps a hand-written list of timestamps in step with a
 CMS. It carries no `<lastmod>`, so its content is stable and it does not rewrite
 itself on every build. `Projects.tsx` uses it as its initial state so the grid paints
 real content on the first frame instead of a spinner while Firestore connects.
+
+It runs as the first step of `npm run build`, and again from a `predev` hook
+before `npm run dev` — so both the grid and the sitemap are current in dev
+without anyone remembering to regenerate them. That hook is why starting the dev
+server can put the snapshot in your working tree: it is a real read against live
+Firestore, so anything edited in the admin panel since the last build shows up as
+a diff. That is the snapshot doing its job, not churn — see the write guard
+below for what it refuses to rewrite.
 
 Firestore remains the source of truth and overwrites the snapshot as soon as the
 live read lands, so a stale snapshot self-corrects within about a second; it only
@@ -63,18 +71,25 @@ stays stale in the snapshot until the next build.
 The script fails soft: if Firestore is unreachable it warns, keeps the committed
 snapshot, and lets the build continue. Never hand-edit the generated file.
 
-**It is generated but it must stay committed — do not gitignore it.** `npm run
-dev` is bare `vite` and does not run the snapshot step, so on a fresh clone with
-the file ignored `Projects.tsx` imports a module that does not exist and the dev
-server dies on TS2307. The committed copy is also the fallback when Firestore is
-unreachable: `bail()` writes an *empty* snapshot when there is nothing to keep,
-which exits 0 and ships a blank first paint rather than failing the build.
+**It is generated but it must stay committed — do not gitignore it.** The
+committed copy is the only real content the grid has before Firestore answers,
+and the `predev`/prebuild hooks cannot be relied on to recreate it: `.env` is not
+committed, so on a fresh clone the generate step has no credentials, `bail()`
+fires, and with nothing to keep it writes an *empty* snapshot and exits 0. That
+ships a blank first paint rather than failing the build — which is the right
+call for a build, and exactly why the populated file needs to be in git rather
+than regenerated on demand.
 
-The script rewrites the file only when the card data actually changes; a
-timestamp-only difference is suppressed. That comparison normalises line endings
-first, because `.gitattributes` (`* text=auto`) plus core.autocrlf puts CRLF in
-the Windows working copy while the script assembles LF — matching them raw made
-the guard miss every time and put the file in the diff after every build.
+The script rewrites a file only when its content actually changes, and there is
+nothing per-run in either body to defeat that — the snapshot used to export a
+`SNAPSHOT_GENERATED_AT` stamp that nothing imported and that dragged a fresh
+timestamp into the diff on any run that touched the file; it has been removed,
+and `git log` answers the same question accurately. The comparison normalises
+line endings first, because `.gitattributes` (`* text=auto`) plus core.autocrlf
+puts CRLF in the Windows working copy while the script assembles LF — matching
+them raw made the guard miss every time and put the file in the diff after every
+build. Net effect: repeated runs are true no-ops, so `npm run dev` leaves the
+tree clean unless the CMS genuinely changed.
 
 ### Admin / CMS (`src/components/Admin.tsx`)
 In-app editor for the `projects` collection: create, edit, delete, and reorder (swaps `order` values) documents via `setDoc`/`deleteDoc`. Dev-only — reach it by pressing **Escape** on the home page, or navigating to `/admin`.

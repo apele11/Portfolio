@@ -32,11 +32,12 @@ import {
  * repo" link that 404s reads worse than no link. Restore `href`/`cta` on
  * <Outcome> pointing at github.com/The-Agency-at-UF/Libre3D once it is public.
  *
- * Media: the files in MEDIA do not exist yet. Drop raw captures into
- * public/assets/Libre3D/ and run `npm run assets` — that writes them to
- * public/assets/compressed/Libre3D/, which is what ASSETS points at. Until then
- * images fall back to the cover and videos show it as a poster, so the page
- * lays out correctly with nothing broken on screen.
+ * Media: the three gizmo clips are real; everything else in MEDIA is still a
+ * name waiting on a capture. Drop raw files into public/assets/Libre3D/ and run
+ * `npm run assets` — that writes them to public/assets/compressed/Libre3D/,
+ * which is what ASSETS points at. Until then images fall back to the cover and
+ * videos show it as a poster, so the page lays out correctly with nothing
+ * broken on screen.
  */
 
 const ASSETS = "/assets/compressed/Libre3D";
@@ -53,8 +54,12 @@ const MEDIA = {
   gridPanel: `${ASSETS}/Grid-Settings.webp`,
   /** Clip: hierarchy rename / hide / lock, synced to viewport selection. */
   hierarchy: `${ASSETS}/Hierarchy.mp4`,
-  /** Clip: translate → rotate → scale on one object. */
-  gizmo: `${ASSETS}/Gizmo.mp4`,
+  /** Clips: the gizmo's three moves, one per clip. Real captures, 2560x1600 —
+   *  the object sits centred, so the square crop in the row below trims panels
+   *  rather than content. */
+  translate: `${ASSETS}/Translate.mp4`,
+  rotate: `${ASSETS}/Rotate.mp4`,
+  scale: `${ASSETS}/Scale.mp4`,
   /** Clip: 1920x1080 → 1080x1080 → custom, preview rescaling to fit. */
   frames: `${ASSETS}/Frame-Sandbox.mp4`,
   /** Stills: edit mode and play mode, same scene, same camera. */
@@ -101,25 +106,28 @@ export default function Libre3DLayout({ project, onBack }: ProjectLayoutProps) {
         <div className="cs-reel">
           <VideoFigure src={MEDIA.overview} poster={PLACEHOLDER} showProgress className="cs-reel__hero" />
 
-          <MediaRow firstWide className="cs-reel__row">
-            <Figure
-              src={PLACEHOLDER}
-              alt="The Libre3D editor — scene hierarchy on the left, 3D viewport centre, settings on the right"
-              caption="The editor at rest"
-            />
-            <VideoFigure
-              src={MEDIA.hierarchy}
-              poster={PLACEHOLDER}
-              caption="Hierarchy — rename, hide, lock, delete"
-            />
+          {/* No posters: these three are shot, so the browser paints their own
+              first frame. The cover stands in elsewhere because those files are
+              not captured yet — using it here would crop a landscape still of a
+              different thing into a square that is about to be replaced. */}
+          {/* One word each. Three cells of the same gizmo doing three things is
+              already the whole caption; a sentence under each ran to three
+              lines at three-across on a phone and left the row ragged. */}
+          <MediaRow square className="cs-reel__row">
+            <VideoFigure src={MEDIA.translate} caption="Move" />
+            <VideoFigure src={MEDIA.rotate} caption="Rotate" />
+            <VideoFigure src={MEDIA.scale} caption="Scale" />
           </MediaRow>
         </div>
 
-        <VideoFigure
-          src={MEDIA.gizmo}
-          poster={PLACEHOLDER}
-          caption="The transform gizmo — one handle for move, rotate, and scale, built on Three.js."
-        />
+        <MediaRow firstWide>
+          <Figure
+            src={PLACEHOLDER}
+            alt="The Libre3D editor — scene hierarchy on the left, 3D viewport centre, settings on the right"
+            caption="The editor at rest"
+          />
+          <VideoFigure src={MEDIA.hierarchy} poster={PLACEHOLDER} caption="Hierarchy — rename, hide, lock, delete" />
+        </MediaRow>
       </MediaGroup>
 
       <CaseStudySection index="/02" label="Experience" title="One Loop, Not a Pipeline">
