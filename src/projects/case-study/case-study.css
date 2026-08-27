@@ -501,13 +501,15 @@
   object-fit: cover;
 }
 
-.cs-showcase__controls {
+.cs-showcase__controls,
+.cs-deck__controls {
   display: flex;
   align-items: center;
   gap: 14px;
 }
 
-.cs-showcase__arrow {
+.cs-showcase__arrow,
+.cs-deck__arrow {
   appearance: none;
   background: none;
   border: 1px solid var(--cs-hair);
@@ -526,24 +528,29 @@
   transition: border-color 0.2s ease, color 0.2s ease;
 }
 
-.cs-showcase__arrow:hover:not(:disabled) {
+.cs-showcase__arrow:hover:not(:disabled),
+.cs-deck__arrow:hover:not(:disabled) {
   border-color: var(--cs-accent);
   color: var(--cs-accent);
 }
 
 /* The track does not wrap, so the ends are real ends. */
-.cs-showcase__arrow:disabled {
+.cs-showcase__arrow:disabled,
+.cs-deck__arrow:disabled {
   opacity: 0.3;
   cursor: default;
 }
 
 .cs-showcase__arrow:focus-visible,
-.cs-showcase__dot:focus-visible {
+.cs-showcase__dot:focus-visible,
+.cs-deck__arrow:focus-visible,
+.cs-deck__dot:focus-visible {
   outline: 2px solid var(--cs-accent);
   outline-offset: 2px;
 }
 
-.cs-showcase__dots {
+.cs-showcase__dots,
+.cs-deck__dots {
   display: flex;
   align-items: center;
   /* The buttons carry their own padding out to a hittable size, so the visual
@@ -553,7 +560,8 @@
 
 /* The button is the touch target; the dot is drawn inside it. Sizing the
    button down to the 8px mark would make it a near-unhittable control. */
-.cs-showcase__dot {
+.cs-showcase__dot,
+.cs-deck__dot {
   appearance: none;
   padding: 0;
   border: 0;
@@ -566,7 +574,8 @@
   border-radius: 4px;
 }
 
-.cs-showcase__dot::after {
+.cs-showcase__dot::after,
+.cs-deck__dot::after {
   content: "";
   width: 8px;
   height: 8px;
@@ -575,7 +584,8 @@
   transition: background-color 0.2s ease, border-color 0.2s ease;
 }
 
-.cs-showcase__dot[data-active="true"]::after {
+.cs-showcase__dot[data-active="true"]::after,
+.cs-deck__dot[data-active="true"]::after {
   background: var(--cs-accent);
   border-color: var(--cs-accent);
 }
@@ -742,6 +752,71 @@
   background: #0a0a0a;
 }
 
+/* The stand-in for an embed that has not been asked for yet. The whole still is
+   the control, so there is no small target to find on a phone. */
+.cs-embed__start {
+  position: absolute;
+  inset: 0;
+  appearance: none;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+}
+
+/* Beats .cs-figure img, which is width:100% / height:auto. */
+.cs-embed .cs-embed__start img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Without a play overlay the still is the only thing there, so it has to
+   answer to a pointer by itself. */
+.cs-embed .cs-embed__start img {
+  transition: filter 0.25s ease;
+}
+
+.cs-embed__start:hover img {
+  filter: brightness(1.07);
+}
+
+.cs-embed__play {
+  position: relative;
+  width: 76px;
+  height: 76px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: rgba(6, 6, 8, 0.62);
+  border: 1px solid rgba(244, 242, 238, 0.5);
+  color: #f4f2ee;
+  font-size: 22px;
+  /* The glyph's own bearing sits it left of centre in a circle. */
+  padding-left: 5px;
+  transition: background-color 0.2s ease, transform 0.2s ease;
+}
+
+.cs-embed__start:hover .cs-embed__play {
+  background: rgba(6, 6, 8, 0.85);
+  transform: scale(1.06);
+}
+
+.cs-embed__start:focus-visible {
+  outline: 2px solid var(--cs-accent);
+  outline-offset: -3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cs-embed__start:hover .cs-embed__play {
+    transform: none;
+  }
+}
+
 .cs-embed-frame iframe {
   position: absolute;
   inset: 0;
@@ -749,6 +824,249 @@
   height: 100%;
   border: 0;
   display: block;
+}
+
+/* ── Deck (DeckSlides) ────────────────────────────────────────
+   A pitch deck flipped through in place. The frame holds one slide's
+   proportion and the track carries every slide plus a clone of the first,
+   which is what lets the loop close by moving forwards like every other step.
+   The arrows, dots and pause reuse the carousel controls defined above. */
+
+.cs-deck__frame {
+  position: relative;
+  overflow: hidden;
+  aspect-ratio: var(--cs-deck-ratio, 1.7778);
+  background: #0a0a0a;
+}
+
+/* The frame takes focus so the arrow keys can drive it, so it has to show that
+   it has focus. */
+.cs-deck__frame:focus-visible {
+  outline: 2px solid var(--cs-accent);
+  outline-offset: 3px;
+}
+
+.cs-deck__track {
+  display: flex;
+  height: 100%;
+  will-change: transform;
+}
+
+/* Switched off for the snap back to the start, and off for the whole component
+   under reduced motion, where --cs-deck-slide resolves to 0ms. */
+.cs-deck__track[data-animate="true"] {
+  transition: transform var(--cs-deck-slide, 350ms) cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.cs-deck__slide {
+  flex: 0 0 100%;
+  width: 100%;
+  height: 100%;
+}
+
+/* Beats .cs-figure img, which is width:100% / height:auto. Inside the track a
+   slide fills the cell the frame gave it instead of setting its own height. */
+.cs-deck .cs-deck__slide img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Nine dots and three buttons is more of a row than a phone's measure holds,
+   and flex would rather shrink the buttons than break the line. Left to it the
+   arrows land at 22px, half the touch target these controls are drawn to, and
+   the outer two spill past the edges of the figure. Wrapping spends a second
+   line instead, which the page has and the measure does not. */
+.cs-deck__controls {
+  justify-content: center;
+  flex-wrap: wrap;
+  row-gap: 6px;
+}
+
+.cs-deck__arrow {
+  flex: none;
+}
+
+.cs-deck__dots {
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+/* Narrow enough that the row has to break somewhere, so it breaks in the one
+   place that keeps both halves legible: the dots take a line of their own and
+   the three buttons sit under them, rather than the row splitting mid-control. */
+@media (max-width: 560px) {
+  .cs-deck__dots {
+    flex-basis: 100%;
+    order: -1;
+  }
+}
+
+/* The pause sits apart from the three controls that move the deck, because it
+   decides whether the deck is moving at all rather than where it is. */
+.cs-deck__play {
+  margin-left: 10px;
+  font-size: 11px;
+}
+
+/* The tap target for the full-size view, covering the whole slide so the
+   picture itself is the control. The chip is what makes that discoverable,
+   because an invisible tap target on an image is a guess. */
+.cs-deck__zoom {
+  position: absolute;
+  inset: 0;
+  appearance: none;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: zoom-in;
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-end;
+}
+
+.cs-deck__zoom:focus-visible {
+  outline: 2px solid var(--cs-accent);
+  outline-offset: -3px;
+}
+
+.cs-deck__zoomchip {
+  margin: 12px;
+  padding: 7px 11px;
+  border-radius: 999px;
+  background: rgba(6, 6, 8, 0.6);
+  color: #f4f2ee;
+  font-family: var(--cs-mono);
+  font-size: 11px;
+  font-weight: 300;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  transition: background-color 0.2s ease;
+}
+
+.cs-deck__zoom:hover .cs-deck__zoomchip,
+.cs-deck__zoom:focus-visible .cs-deck__zoomchip {
+  background: rgba(6, 6, 8, 0.86);
+}
+
+/* ── Deck lightbox ────────────────────────────────────────────
+   Where a slide is actually readable. In the deck a content slide's body copy
+   lands around 12px on a laptop and nearer 4px on a phone, which is legible as
+   an impression of a deck and not as a deck.
+
+   It is deliberately still: nothing advances while it is open, because the
+   reason it is open is that somebody wanted to stop. The arrows are there so
+   reading the next slide does not mean closing and reopening.
+
+   Portaled to <body>, so these rules name their own colours rather than
+   inheriting the study's paper palette, which does not resolve out here. */
+
+.cs-lightbox {
+  position: fixed;
+  inset: 0;
+  /* Above the NavBar, which is position:fixed at zIndex 1000 (set inline in
+     NavBar.tsx). Both sit in the root stacking context, so anything lower
+     leaves the nav painting over the overlay with its links still clickable
+     through it, which is not a modal. Kept well under the dev-only Admin panel
+     at 10000. */
+  z-index: 1100;
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+  gap: 14px;
+  padding: max(18px, env(safe-area-inset-top)) 18px max(18px, env(safe-area-inset-bottom));
+  background: rgba(6, 6, 8, 0.95);
+  cursor: zoom-out;
+}
+
+/* Flex with margin:auto on the child rather than place-items:center, because a
+   centred grid item that overflows its container is clipped at the start edge
+   and cannot be scrolled back to. That matters here: on a phone the slide is
+   meant to overflow. */
+.cs-lightbox__stage {
+  display: flex;
+  min-height: 0;
+  overflow: auto;
+  cursor: default;
+}
+
+.cs-lightbox__img {
+  margin: auto;
+  display: block;
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  /* The placeholder the component sets while the high-resolution copy loads.
+     Same picture, same box, so the swap is a sharpening rather than a change. */
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+}
+
+.cs-lightbox__close {
+  position: absolute;
+  top: max(18px, env(safe-area-inset-top));
+  right: 18px;
+}
+
+.cs-lightbox__bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  cursor: default;
+}
+
+.cs-lightbox__arrow,
+.cs-lightbox__close {
+  appearance: none;
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(244, 242, 238, 0.3);
+  border-radius: 50%;
+  background: rgba(244, 242, 238, 0.06);
+  color: #f4f2ee;
+  font-family: "IBM Plex Mono", ui-monospace, "SF Mono", "Cascadia Mono", Consolas, monospace;
+  font-size: 15px;
+  cursor: pointer;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.cs-lightbox__arrow:hover,
+.cs-lightbox__close:hover {
+  background: rgba(244, 242, 238, 0.16);
+  border-color: rgba(244, 242, 238, 0.6);
+}
+
+.cs-lightbox__arrow:focus-visible,
+.cs-lightbox__close:focus-visible {
+  outline: 2px solid #f4f2ee;
+  outline-offset: 2px;
+}
+
+.cs-lightbox__count {
+  margin: 0;
+  min-width: 6ch;
+  text-align: center;
+  font-family: "IBM Plex Mono", ui-monospace, "SF Mono", "Cascadia Mono", Consolas, monospace;
+  font-size: 12px;
+  font-weight: 300;
+  letter-spacing: 0.14em;
+  color: rgba(244, 242, 238, 0.72);
+}
+
+/* Fitting a 16:9 slide to a phone screen would open it "full size" and leave
+   it exactly as unreadable as it was in the deck, because the constraint is
+   the width of the phone and not the width of the figure. So below this the
+   slide is allowed to be wider than the viewport and panned instead, which
+   puts its body copy back at a readable size. The stage opens centred. */
+@media (max-width: 700px) {
+  .cs-lightbox__img {
+    width: 1100px;
+    max-width: none;
+    max-height: none;
+  }
 }
 
 /* ── Media scale ──────────────────────────────────────────────

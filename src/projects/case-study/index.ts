@@ -15,6 +15,7 @@ export {
   PhoneShowcase,
   MediaCompare,
   Embed,
+  DeckSlides,
   // Paper diagrams
   PaperDiagram,
   PaperRow,
@@ -35,4 +36,4 @@ export {
   SystemMap,
 } from "./sections";
 
-export type { PhoneScreen } from "./sections";
+export type { PhoneScreen, DeckSlide } from "./sections";

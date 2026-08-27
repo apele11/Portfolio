@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 
 /**
  * How much room a piece of media gets *inside a section body*, where the
@@ -338,6 +339,17 @@ export interface PhoneScreen {
   poster?: string;
 }
 
+/**
+ * Puts a scrollable box in the middle of its content. On a phone the lightbox
+ * slide is deliberately wider than the screen, and the default scroll position
+ * is its top-left corner, which on a slide is usually a margin.
+ */
+function centreScroll(el: HTMLElement | null) {
+  if (!el) return;
+  el.scrollLeft = (el.scrollWidth - el.clientWidth) / 2;
+  el.scrollTop = (el.scrollHeight - el.clientHeight) / 2;
+}
+
 /** Live media-query match. Used to pick a layout, not just to skin one. */
 function useMediaQuery(query: string) {
   const [matches, setMatches] = useState(() => window.matchMedia(query).matches);
@@ -529,14 +541,67 @@ interface EmbedProps {
   /** Shown as an "open in new tab" link under the frame — also the fallback if the site refuses to embed. */
   href?: string;
   size?: MediaSize;
+  /**
+   * A still to stand in for the embed until a reader asks for it, at which
+   * point the frame is mounted and the embed starts loading.
+   *
+   * Worth setting whenever the embedded thing is heavy, and required in
+   * practice for anything at the top of a page. A mounted iframe pays its whole
+   * cost on load whether or not anybody wanted it, and "lead with the demo"
+   * turns into a large download nobody asked for and a second WebGL context
+   * running behind the hero. A poster keeps the demo first without that.
+   */
+  poster?: string;
+  /** Alt text for the poster. Leave unset if the still adds nothing to the caption. */
+  posterAlt?: string;
+  /**
+   * Whether to draw a play control over the poster. Defaults to true. Set it
+   * false when the still already carries one, which a capture of a start screen
+   * usually does: two play buttons in one frame, in two different styles, reads
+   * as a bug rather than an invitation. The whole still is the control either
+   * way, so nothing is lost by leaving it to the artwork.
+   */
+  posterPlay?: boolean;
 }
 
 /** A live, interactive embed of an external site (e.g. the shipped product). */
-export function Embed({ src, title, ratio = 62.5, caption, href, size }: EmbedProps) {
+export function Embed({
+  src,
+  title,
+  ratio = 62.5,
+  caption,
+  href,
+  size,
+  poster,
+  posterAlt,
+  posterPlay = true,
+}: EmbedProps) {
+  /* With no poster the frame is live from the start, which is the old
+     behaviour and right for a light embed further down a page. */
+  const [live, setLive] = useState(!poster);
+
   return (
     <figure className={`cs-figure cs-embed${sizeClass(size)}`}>
       <div className="cs-embed-frame" style={{ paddingTop: `${ratio}%` }}>
-        <iframe src={src} title={title} loading="lazy" allow="fullscreen" />
+        {live ? (
+          <iframe src={src} title={title} loading="lazy" allow="fullscreen" />
+        ) : (
+          /* The click that starts it is also the click that gives it focus,
+             which a keyboard-driven demo needs anyway. */
+          <button
+            type="button"
+            className="cs-embed__start"
+            onClick={() => setLive(true)}
+            aria-label={`Start ${title}`}
+          >
+            <img src={poster} alt={posterAlt ?? ""} />
+            {posterPlay ? (
+              <span className="cs-embed__play" aria-hidden="true">
+                ▶
+              </span>
+            ) : null}
+          </button>
+        )}
       </div>
       {(caption || href) && (
         <figcaption>
@@ -551,6 +616,436 @@ export function Embed({ src, title, ratio = 62.5, caption, href, size }: EmbedPr
           )}
         </figcaption>
       )}
+    </figure>
+  );
+}
+
+/* ── Deck ──────────────────────────────────────────────────────
+   A submitted presentation, flipped through in place. */
+
+export interface DeckSlide {
+  /** The carousel image, sized for the deck's own measure. */
+  src: string;
+  alt: string;
+  /**
+   * A higher-resolution copy for the full-size view, fetched only when a reader
+   * opens that slide. The carousel and the lightbox want different files: the
+   * carousel shows nine at roughly 950px and pays for all of them up front,
+   * while the lightbox shows one at up to 2500px on a large display, or panned
+   * past a phone screen at three times its device pixels. Sizing one image for
+   * both means either the carousel is far heavier than it needs to be or the
+   * full-size view is not full size. Falls back to `src` when unset.
+   */
+  full?: string;
+  /**
+   * How long this slide holds, in ms, overriding the deck's `interval`. A title
+   * card is read the moment it lands and should not sit there for as long as a
+   * slide carrying a paragraph, so the cadence is per slide rather than one
+   * number chosen for the wordiest one.
+   */
+  hold?: number;
+}
+
+interface DeckSlidesProps {
+  slides: DeckSlide[];
+  caption?: string;
+  /** Small mono chip above the frame. */
+  label?: string;
+  /** How long each slide holds before the deck moves on, in ms. */
+  interval?: number;
+  /**
+   * How long the slide a reader landed on holds before the deck starts again,
+   * in ms. Defaults to half again the interval, because reaching for the
+   * controls means wanting a longer look at this one, and a hold shorter than
+   * the interval would make the click read as having done nothing.
+   */
+  resumeDelay?: number;
+  /** Slide proportion as width / height. Defaults to the 16:9 of a presentation. */
+  ratio?: number;
+  size?: MediaSize;
+}
+
+/**
+ * A deck that plays itself: the slides advance on a timer, and touching the
+ * controls holds them still for a moment before they start again.
+ *
+ * The point of the auto-advance is that a pitch deck is not a document here.
+ * Nobody reads nine slides of somebody else's campaign strategy off a case
+ * study, but plenty of people will let one play beside the prose. The controls
+ * are for the reader who wants to stop on a slide, which is why the timer
+ * yields to them rather than fighting them.
+ *
+ * The default interval is set for reading rather than for flipping. A slide
+ * carrying a headline and a short passage wants several seconds even to skim,
+ * and the cost of running fast is not that the deck looks hurried, it is that
+ * the slides stop being legible at all and the whole thing turns into a
+ * texture. The floor is what the wordiest slide needs, not the average.
+ *
+ * Three things follow from it moving on its own. It only runs while it is on
+ * screen, so a deck further down the page is not animating against the hero
+ * shader. It carries a real pause control, because content that updates itself
+ * has to be stoppable by someone who cannot read at its pace. And it starts
+ * paused under `prefers-reduced-motion`, which asks to be spared exactly this
+ * kind of unprompted movement.
+ */
+export function DeckSlides({
+  slides,
+  caption,
+  label,
+  interval = 6000,
+  resumeDelay = Math.round(interval * 1.5),
+  ratio = 16 / 9,
+  size,
+}: DeckSlidesProps) {
+  const count = slides.length;
+  const reduced = useMediaQuery("(prefers-reduced-motion: reduce)");
+
+  /* The index runs 0..count, one past the last slide. That final position is a
+     clone of the first, so closing the loop is a forward step like every other
+     step; the index is then snapped back to 0 with the transition off, which is
+     invisible because both positions show the same picture. The alternative is
+     sliding back across every slide to reach the start, which is a long
+     backwards sweep that no other step in the deck makes. */
+  const [index, setIndex] = useState(0);
+  const [animate, setAnimate] = useState(true);
+  const [playing, setPlaying] = useState(!reduced);
+  const [onScreen, setOnScreen] = useState(false);
+  /** When the deck is next allowed to move, pushed forward by an interaction. */
+  const [heldUntil, setHeldUntil] = useState(0);
+  /** Which slide is open full size, or null. The deck does not move while it is. */
+  const [zoomed, setZoomed] = useState<number | null>(null);
+
+  const frameRef = useRef<HTMLDivElement>(null);
+  const zoomBtnRef = useRef<HTMLButtonElement>(null);
+  const closeBtnRef = useRef<HTMLButtonElement>(null);
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const stageRef = useRef<HTMLDivElement>(null);
+
+  /* One number for the CSS transition and the snap that follows it, kept under
+     the hold so a slide has landed before the next one is asked for. */
+  const slideMs = reduced ? 0 : Math.min(360, Math.round(interval * 0.7));
+  /** The picture on screen. The snap below changes `index` without changing this. */
+  const active = index % count;
+  /** This slide's own turn, falling back to the deck's cadence. */
+  const holdMs = slides[active]?.hold ?? interval;
+  const isZoomed = zoomed !== null;
+
+  useEffect(() => {
+    const frame = frameRef.current;
+    if (!frame) return;
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) setOnScreen(entry.isIntersecting);
+      },
+      { threshold: 0.35 }
+    );
+    io.observe(frame);
+    return () => io.disconnect();
+  }, []);
+
+  /* One step is scheduled at a time rather than run off an interval, because
+     the wait is not always the same length: after an interaction the slide the
+     reader landed on owes them `resumeDelay` before anything moves.
+
+     The dependency that makes this work is `active` rather than `index`. The
+     two differ for exactly one moment, which is the snap back from the clone to
+     the start, and that moment must not restart the clock — the picture on
+     screen did not change, so the reader is owed the rest of its turn and not a
+     fresh one. Keying on the visible slide means the pending step survives the
+     snap and lands on time. */
+  useEffect(() => {
+    if (!playing || !onScreen || isZoomed || count < 2) return;
+    const wait = Math.max(holdMs, heldUntil - Date.now());
+    /* Sitting on the clone means the snap below has not run yet, which only
+       happens in a throttled tab. Holding position lets it land and costs one
+       step, where advancing from here would sweep the whole deck backwards. */
+    const id = window.setTimeout(() => setIndex((i) => (i >= count ? i : i + 1)), wait);
+    return () => window.clearTimeout(id);
+  }, [playing, onScreen, isZoomed, count, holdMs, active, heldUntil]);
+
+  useEffect(() => {
+    if (index !== count) return;
+    const id = window.setTimeout(() => {
+      setAnimate(false);
+      setIndex(0);
+    }, slideMs + 40);
+    return () => window.clearTimeout(id);
+  }, [index, count, slideMs]);
+
+  useEffect(() => {
+    if (animate) return;
+    /* Two frames. The first paints the un-animated jump back to the start, the
+       second turns the transition on again. Doing both inside one frame lets the
+       browser coalesce them and animate the jump after all. */
+    let inner = 0;
+    const outer = requestAnimationFrame(() => {
+      inner = requestAnimationFrame(() => setAnimate(true));
+    });
+    return () => {
+      cancelAnimationFrame(outer);
+      cancelAnimationFrame(inner);
+    };
+  }, [animate]);
+
+  /* Wraps, unlike PhoneShowcase's clamped track. That one is a set of screens
+     with a first and a last; this one is a loop the reader has stepped into, so
+     both ends have somewhere to go. */
+  const goTo = (next: number) => {
+    setIndex(((next % count) + count) % count);
+    setHeldUntil(Date.now() + resumeDelay);
+  };
+
+  const step = (delta: number) => goTo(active + delta);
+
+  const togglePlay = () => {
+    const next = !playing;
+    setPlaying(next);
+    /* Pressing play is a request to start moving, so it drops the hold that the
+       button press would otherwise have to wait out. */
+    if (next) setHeldUntil(0);
+  };
+
+  const stepZoom = (delta: number) =>
+    setZoomed((z) => (z === null ? z : (((z + delta) % count) + count) % count));
+
+  /* Closing puts the deck on whatever was being read rather than back where it
+     was, and gives that slide the interaction hold, so the reader is not
+     dropped straight back into a moving deck on a different slide. */
+  const closeZoom = () => {
+    if (zoomed !== null) {
+      setIndex(zoomed);
+      setHeldUntil(Date.now() + resumeDelay);
+    }
+    setZoomed(null);
+    zoomBtnRef.current?.focus();
+  };
+
+  useEffect(() => {
+    if (!isZoomed) return;
+    const previous = document.body.style.overflow;
+    /* The page behind must not scroll under the overlay. */
+    document.body.style.overflow = "hidden";
+    closeBtnRef.current?.focus();
+    return () => {
+      document.body.style.overflow = previous;
+    };
+  }, [isZoomed]);
+
+  /* Keys are bound to the window rather than the dialog so they work wherever
+     focus happens to be, and Tab is caught here because this is a modal: with
+     the page behind it still in the tab order, focus would otherwise walk out
+     of the overlay and into a deck the reader cannot see. */
+  useEffect(() => {
+    if (zoomed === null) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        setIndex(zoomed);
+        setHeldUntil(Date.now() + resumeDelay);
+        setZoomed(null);
+        zoomBtnRef.current?.focus();
+        return;
+      }
+      if (e.key === "ArrowLeft" || e.key === "ArrowRight") {
+        e.preventDefault();
+        const delta = e.key === "ArrowLeft" ? -1 : 1;
+        setZoomed((z) => (z === null ? z : (((z + delta) % count) + count) % count));
+        return;
+      }
+      if (e.key !== "Tab") return;
+      const dialog = dialogRef.current;
+      const stops = dialog?.querySelectorAll<HTMLElement>("button");
+      if (!dialog || !stops || stops.length === 0) return;
+      const first = stops[0];
+      const last = stops[stops.length - 1];
+      const here = document.activeElement;
+      const outside = !dialog.contains(here);
+      if (e.shiftKey && (here === first || outside)) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && (here === last || outside)) {
+        e.preventDefault();
+        first.focus();
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [zoomed, count, resumeDelay]);
+
+  /* On a phone the slide is wider than the screen on purpose (see the
+     stylesheet), so it opens centred rather than at its top-left corner. This
+     only lands for a slide the browser has already decoded; one that has not
+     been painted yet still measures as fitting, so the image re-centres on its
+     own load event too. */
+  useEffect(() => {
+    if (zoomed === null) return;
+    centreScroll(stageRef.current);
+    const id = requestAnimationFrame(() => centreScroll(stageRef.current));
+    return () => cancelAnimationFrame(id);
+  }, [zoomed]);
+
+  return (
+    <figure className={`cs-figure cs-deck${sizeClass(size)}`}>
+      {label ? <p className="cs-media-label">{label}</p> : null}
+
+      <div
+        ref={frameRef}
+        className="cs-deck__frame"
+        style={
+          {
+            "--cs-deck-ratio": String(ratio),
+            "--cs-deck-slide": `${slideMs}ms`,
+          } as CSSProperties
+        }
+        role="group"
+        aria-roledescription="carousel"
+        aria-label={`${count} slides from the submitted deck`}
+        tabIndex={0}
+        onKeyDown={(e) => {
+          if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
+          e.preventDefault();
+          step(e.key === "ArrowLeft" ? -1 : 1);
+        }}
+      >
+        <div
+          className="cs-deck__track"
+          data-animate={animate}
+          style={{ transform: `translateX(-${index * 100}%)` }}
+        >
+          {[...slides, slides[0]].map((slide, i) => (
+            <div className="cs-deck__slide" key={`${slide.src}-${i}`} aria-hidden={i !== active}>
+              {/* Every slide is fetched up front. They sit up to eight measures
+                  off to the side of the frame, far enough out that a lazy image
+                  would not be asked for until the deck had already flipped past
+                  it. Low priority is what keeps that off the hero's back. */}
+              <img
+                src={slide.src}
+                alt={i === count ? "" : slide.alt}
+                decoding="async"
+                fetchPriority={i === 0 ? "auto" : "low"}
+              />
+            </div>
+          ))}
+        </div>
+
+        {/* Its own control rather than a click handler on the frame, because the
+            frame is the carousel and this is a second, different action on it.
+            It covers the whole slide so the tap target is the picture, and
+            carries a visible chip so that is discoverable rather than guessed. */}
+        <button
+          ref={zoomBtnRef}
+          type="button"
+          className="cs-deck__zoom"
+          onClick={() => setZoomed(active)}
+          aria-label={`View slide ${active + 1} of ${count} full size`}
+        >
+          <span className="cs-deck__zoomchip" aria-hidden="true">
+            ⤢ Full size
+          </span>
+        </button>
+      </div>
+
+      <div className="cs-deck__controls">
+        <button type="button" className="cs-deck__arrow" onClick={() => step(-1)} aria-label="Previous slide">
+          <span aria-hidden="true">←</span>
+        </button>
+
+        <div className="cs-deck__dots">
+          {slides.map((slide, i) => (
+            <button
+              key={slide.src}
+              type="button"
+              className="cs-deck__dot"
+              data-active={i === active}
+              aria-label={`Slide ${i + 1} of ${count}`}
+              aria-current={i === active}
+              onClick={() => goTo(i)}
+            />
+          ))}
+        </div>
+
+        <button type="button" className="cs-deck__arrow" onClick={() => step(1)} aria-label="Next slide">
+          <span aria-hidden="true">→</span>
+        </button>
+
+        <button
+          type="button"
+          className="cs-deck__arrow cs-deck__play"
+          onClick={togglePlay}
+          aria-label={playing ? "Pause the deck" : "Play the deck"}
+        >
+          <span aria-hidden="true">{playing ? "❙❙" : "▶"}</span>
+        </button>
+      </div>
+
+      {caption ? <figcaption>{caption}</figcaption> : null}
+
+      {/* Portaled to <body>, so the overlay is not sized or clipped by the
+          measure it was opened from, and so it cannot be trapped by a
+          transformed ancestor. That puts it outside .case-study and out of
+          reach of the page's custom properties, which is why its stylesheet
+          names its own colours: it sits on black, not on the study's paper. */}
+      {zoomed !== null
+        ? createPortal(
+            <div
+              ref={dialogRef}
+              className="cs-lightbox"
+              role="dialog"
+              aria-modal="true"
+              aria-label={`Slide ${zoomed + 1} of ${count}, full size`}
+              onClick={closeZoom}
+            >
+              <div className="cs-lightbox__stage" ref={stageRef} onClick={(e) => e.stopPropagation()}>
+                {/* The carousel copy sits behind as a background while the
+                    high-resolution one is still arriving, so a tap resolves to
+                    a picture immediately and then sharpens, rather than to an
+                    empty frame. It is already decoded: the deck fetched it. */}
+                <img
+                  className="cs-lightbox__img"
+                  src={slides[zoomed].full ?? slides[zoomed].src}
+                  alt={slides[zoomed].alt}
+                  style={
+                    slides[zoomed].full ? { backgroundImage: `url("${slides[zoomed].src}")` } : undefined
+                  }
+                  onLoad={() => centreScroll(stageRef.current)}
+                />
+              </div>
+
+              <button
+                ref={closeBtnRef}
+                type="button"
+                className="cs-lightbox__close"
+                onClick={closeZoom}
+                aria-label="Close the full size view"
+              >
+                <span aria-hidden="true">✕</span>
+              </button>
+
+              <div className="cs-lightbox__bar" onClick={(e) => e.stopPropagation()}>
+                <button
+                  type="button"
+                  className="cs-lightbox__arrow"
+                  onClick={() => stepZoom(-1)}
+                  aria-label="Previous slide"
+                >
+                  <span aria-hidden="true">←</span>
+                </button>
+                <p className="cs-lightbox__count">
+                  {zoomed + 1} / {count}
+                </p>
+                <button
+                  type="button"
+                  className="cs-lightbox__arrow"
+                  onClick={() => stepZoom(1)}
+                  aria-label="Next slide"
+                >
+                  <span aria-hidden="true">→</span>
+                </button>
+              </div>
+            </div>,
+            document.body
+          )
+        : null}
     </figure>
   );
 }
