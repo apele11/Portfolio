@@ -11,6 +11,7 @@ npm run lint      # eslint over the repo
 npm run preview   # serve the production build locally
 npm run deploy    # build + firebase deploy (Firebase Hosting, project portfolio-cf811)
 npm run assets    # compress dropped media into public/assets/compressed/ (see below)
+npm run capture   # screenshot a running site into the asset drop zone (see below)
 npm run snapshot  # regenerate src/data/projects.snapshot.ts from Firestore (see below)
 npm run og        # re-render public/og-image.jpg, the social preview card (see below)
 ```
@@ -183,6 +184,42 @@ unless `--force`. Other flags: `--dry`, `--keep`, `--only=<substring>`.
 
 Reference assets as `/assets/compressed/<Project>/<file>`. Layouts define a local
 `const ASSETS = "/assets/compressed/<Project>"`.
+
+### Case-study screenshots (`scripts/capture-page.mjs`)
+
+`npm run capture -- <url> <Project>/<name>` writes a full-page still of a running
+site to `public/assets/<Project>/<name>.png` — the drop zone — so producing a
+case-study figure is two commands:
+
+```bash
+npm run capture -- http://localhost:3000 PinkAhead/PinkAhead-Landing-Full
+npm run assets
+```
+
+It drives the Chrome already installed on the machine through `puppeteer-core`
+(a devDependency; it downloads no browser of its own). Set `CHROME_PATH` if
+Chrome is somewhere unusual. Flags: `--width= --height= --scale= --mobile
+--viewport --wait= --raw`.
+
+**The viewport is deliberately a normal 1440x900 rather than the height of the
+page.** Source pages routinely build sections on `min-height: 100dvh`, and a
+page-tall window makes the first section swell to fill it while everything below
+falls off the bottom of the capture. This bit the Jukebox landing page, whose
+Hero, Features and Repos are all `calc(100dvh - header)`. The script scrolls the
+page through once instead — which is also what makes lazy images load — and then
+takes the full height with `captureBeyondViewport`.
+
+The wait for fonts and in-flight images is **bounded on purpose**. A lazy image
+below the fold never begins loading until something scrolls to it, so its
+`complete` stays false and neither `load` nor `error` ever fires; waiting on all
+of them outright deadlocks under `--viewport`, which skips the scroll pass.
+
+By default it hides dev-server furniture (the Next.js badge, the Vite error
+overlay) and pauses animations so a still never lands mid-transition. `--raw`
+turns that off.
+
+A tall result belongs in `ScrollFigure`, not `Figure` — the script says so when
+the capture comes out tall.
 
 ### Metadata and the social card (`scripts/generate-og-image.mjs`)
 
