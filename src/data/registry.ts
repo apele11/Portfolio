@@ -6,6 +6,7 @@ import NewBusinessLayout from "../projects/layouts/NewBusinessLayout";
 import Libre3DLayout from "../projects/layouts/Libre3DLayout";
 import JukeboxLayout from "../projects/layouts/JukeboxLayout";
 import TwixLayout from "../projects/layouts/TwixLayout";
+import PinkAheadLayout from "../projects/layouts/PinkAheadLayout";
 
 export type ProjectLayoutProps = {
   project: ProjectDetail;
@@ -53,6 +54,10 @@ const layoutRegistry: LayoutRegistryEntry[] = [
   {
     matches: (project) => headerIncludes(project, "twix"),
     component: TwixLayout,
+  },
+  {
+    matches: (project) => headerIncludes(project, "pink ahead", "pinkahead"),
+    component: PinkAheadLayout,
   },
 ];
 
