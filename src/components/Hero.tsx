@@ -65,7 +65,15 @@ export default function Hero({
         // Calculate opacity and scale based on scroll position
         // Hero section is one viewport tall, so fade out/scale as user scrolls
         const maxScroll = window.innerHeight * 0.7; // Faster transition over less scroll distance
-        const scrollProgress = Math.min(currentScrollY / maxScroll, 1); // 0 to 1
+        // Guarded because a viewport that has not been sized yet reports an
+        // innerHeight of 0, which turns the ratio into 0/0. The NaN then reaches
+        // both style values below, and React drops the whole declaration rather
+        // than just the bad property, so the hero renders with no opacity and no
+        // transform at all. Falling back to 0 holds it in its at-top state,
+        // which is what an unscrolled page should look like anyway.
+        const scrollProgress = Number.isFinite(maxScroll) && maxScroll > 0
+          ? Math.min(Math.max(currentScrollY / maxScroll, 0), 1) // 0 to 1
+          : 0;
 
         setOpacity(Math.max(1 - scrollProgress, 0));
         setScale(Math.max(1 - scrollProgress * 0.1, 0.9)); // Scale from 1 to 0.9
