@@ -1,0 +1,33 @@
+{
+  "fields": {
+    "id": { "stringValue": "1788024781837" },
+    "header": { "stringValue": "Pink Ahead" },
+    "subtitle": { "stringValue": "Website for breast cancer awareness nonprofit, Pink Ahead." },
+    "eyebrow": { "stringValue": "Nonprofit Site, Front End" },
+    "order": { "integerValue": "4" },
+    "date": { "stringValue": "July 2026 - Aug 2026" },
+    "type": { "stringValue": "Group" },
+    "fullDescription": { "stringValue": "" },
+    "coverUrl": { "stringValue": "/assets/compressed/PinkAhead/PinkAhead-cover.webp" },
+    "color1": { "stringValue": "#ec08bc" },
+    "color2": { "stringValue": "#ffcce9" },
+    "color3": { "stringValue": "#fb79d8" },
+    "color4": { "stringValue": "#ffd6f0" },
+    "scrimStrength": { "doubleValue": 0.72 },
+    "scrimWidth": { "doubleValue": 0.6 },
+    "role": {
+      "arrayValue": {
+        "values": [{ "stringValue": "Frontend Developer" }]
+      }
+    },
+    "team": { "arrayValue": {} },
+    "skills": {
+      "arrayValue": {
+        "values": [
+          { "stringValue": "React" },
+          { "stringValue": "TypeScript" }
+        ]
+      }
+    }
+  }
+}

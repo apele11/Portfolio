@@ -63,20 +63,6 @@ export const PROJECTS_SNAPSHOT: Project[] = [
     "scrimWidth": 0.28
   },
   {
-    "id": "1788024781837",
-    "eyebrow": "Nonprofit Site, Front End",
-    "header": "Pink Ahead",
-    "subtitle": "Website for breast cancer awareness nonprofit, Pink Ahead.",
-    "coverUrl": "/assets/compressed/PinkAhead/PinkAhead-cover.webp",
-    "order": 4,
-    "color1": "#ec08bc",
-    "color2": "#ffcce9",
-    "color3": "#fb79d8",
-    "color4": "#ffd6f0",
-    "scrimStrength": 0.72,
-    "scrimWidth": 0.6
-  },
-  {
     "id": "1769547665588",
     "eyebrow": "Open Source, Front End",
     "header": "Jukebox, Open Source Club",
