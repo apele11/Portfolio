@@ -102,8 +102,9 @@ export default function Libre3DLayout({ project, onBack }: ProjectLayoutProps) {
           Building 3D for the web today means one of three things: writing custom code, standing up an asset pipeline,
           or accepting a closed-source tool's terms about what you may do with scenes you made yourself. Libre3D is
           the fourth option. It is a workspace where a non-technical designer assembles a scene, checks it the way a
-          viewer will see it, and keeps it. I have been building it since June 2026 and have written effectively all of
-          it: architecture, editor, and the publish pipeline behind it.
+          viewer will see it, and keeps it. I started it in June 2026, designed the software end to end, and built the
+          architecture, the editor, and the publish pipeline behind it. It is now a team of four, where I own the
+          design and run the backlog.
         </p>
         <p>
           What works today: scene hierarchy with drag-to-reparent, click-to-select and box-select, grouping and undo, a
