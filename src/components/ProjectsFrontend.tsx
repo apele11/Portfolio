@@ -1,10 +1,8 @@
 import { useState, useEffect, useRef, type RefObject } from "react";
 import type { CSSProperties } from "react";
-import { Link } from "react-router-dom";
 import type * as THREE from "three";
-import CoverMedia from "./CoverMedia";
-import { coverScrimGradient } from "../data/coverScrim";
-import { useIsMobile, VIEWPORT_HEIGHT } from "../viewport";
+import { VIEWPORT_HEIGHT } from "../viewport";
+import ProjectCard from "./ProjectCard";
 
 interface ShaderUniforms {
   uColor1: { value: THREE.Color };
@@ -41,7 +39,6 @@ export default function ProjectsFrontend({
 }: ProjectsFrontendProps) {
   const [visibleProjectId, setVisibleProjectId] = useState<string | null>(null);
   const sectionRefs = useRef<{ [key: string]: HTMLElement | null }>({});
-  const isMobile = useIsMobile();
 
   // Use scroll event listener with requestAnimationFrame to detect the active section
   useEffect(() => {
@@ -133,82 +130,33 @@ export default function ProjectsFrontend({
         />
       )}
 
-      {projects.map((project) => {
-        const scrim = coverScrimFor(project);
-        return (
-          <section
-            key={project.id}
-            data-project-id={project.id}
-            ref={(el) => {
-              if (el) sectionRefs.current[project.id] = el;
-            }}
-            style={fullScreenProjectSection}
-          >
-            {/* Use project colors if defined, otherwise fall back to hero base colors */}
-            {uniformsRef && (
-              <UpdateColorsScript
-                uniformsRef={uniformsRef}
-                colors={
-                  project.color1 && project.color2 && project.color3 && project.color4
-                    ? [project.color1, project.color2, project.color3, project.color4]
-                    : ["#19053d", "#2f7687", "#40aba2", "#6c6597"]
-                }
-                isVisible={visibleProjectId === project.id}
-              />
-            )}
+      {projects.map((project) => (
+        <section
+          key={project.id}
+          data-project-id={project.id}
+          ref={(el) => {
+            if (el) {
+              sectionRefs.current[project.id] = el;
+            }
+          }}
+          style={fullScreenProjectSection}
+        >
+          {/* Use project colors if defined, otherwise fall back to hero base colors */}
+          {uniformsRef && (
+            <UpdateColorsScript
+              uniformsRef={uniformsRef}
+              colors={
+                project.color1 && project.color2 && project.color3 && project.color4
+                  ? [project.color1, project.color2, project.color3, project.color4]
+                  : ["#19053d", "#2f7687", "#40aba2", "#6c6597"]
+              }
+              isVisible={visibleProjectId === project.id}
+            />
+          )}
 
-            {/* The whole panel is one anchor, not a div with an onClick. A click
-                handler is invisible to a crawler, unreachable by keyboard, silent
-                to a screen reader, and cannot be cmd-clicked into a new tab; an
-                anchor is all four for free. It is also the only crawl path into
-                the case studies that exists — nothing else on the site links to
-                them, and Googlebot follows hrefs, it does not click. */}
-            <Link
-              to={`/projects/${project.id}`}
-              aria-label={project.header}
-              style={{
-                ...projectLink,
-                ...(isMobile ? mobileProjectSection : null),
-              }}
-            >
-            {/* Cover — a still or a looping clip, depending on the project */}
-            {isMobile ? (
-              <>
-                <CoverMedia
-                  src={project.coverUrl}
-                  alt={project.header}
-                  style={{ ...projectImage, ...mobileProjectImage }}
-                />
-                {/* Text Content */}
-                <div style={mobileTextContent}>
-                  <p style={{ ...eyebrow, ...mobileEyebrow }}>{project.eyebrow}</p>
-                  <h2 style={{ ...title, ...mobileTitle }}>{project.header}</h2>
-                  <p style={{ ...subtitle, ...mobileSubtitle }}>{project.subtitle}</p>
-                </div>
-              </>
-            ) : (
-              <>
-                <CoverMedia
-                  src={project.coverUrl}
-                  alt={project.header}
-                  style={projectImage}
-                />
-                {/* Scrim. Only the desktop composition lays type over the cover,
-                    so only it needs one — the mobile branch puts the text below
-                    the image, where there is nothing to darken. */}
-                {scrim && <div style={scrim} aria-hidden="true" />}
-                {/* Text Content */}
-                <div style={textContent}>
-                  <p style={eyebrow}>{project.eyebrow}</p>
-                  <h2 style={title}>{project.header}</h2>
-                  <p style={subtitle}>{project.subtitle}</p>
-                </div>
-              </>
-            )}
-            </Link>
-          </section>
-        );
-      })}
+          <ProjectCard {...project} />
+        </section>
+      ))}
     </>
   );
 }
@@ -241,147 +189,12 @@ function UpdateColorsScript({
 }
 
 // === Style Definitions ===
-// Add your styles here or move them to a separate CSS file
 
 const fullScreenProjectSection: CSSProperties = {
   position: "relative",
   width: "100%",
   height: VIEWPORT_HEIGHT,
   overflow: "hidden",
-};
-
-/**
- * The anchor fills the panel so the click target is unchanged from when this
- * was a whole-section onClick. `inset: 0` on a positioned parent with no
- * padding makes it coincident with the old containing block, so the absolutely
- * positioned cover and text column land exactly where they did before; on
- * mobile the flex column that used to sit on the section is spread on top.
- */
-const projectLink: CSSProperties = {
-  position: "absolute",
-  inset: 0,
-  display: "block",
-  color: "inherit",
-  textDecoration: "none",
-  cursor: "pointer",
-};
-
-/**
- * The desktop composition puts a 30%-wide text column across the left edge of a
- * half-width cover. Taken literally to a phone that collapses: at 375px the
- * cover lands at 188x106 and the column becomes a 113px ribbon of wrapped words
- * lying on top of it.
- *
- * So the phone drops the straddle rather than scaling it down. The cover goes
- * full-column and the whole text block sits below it, off the image entirely —
- * nothing overlaps, and the type gets the full column width to set in.
- */
-const mobileProjectSection: CSSProperties = {
-  display: "flex",
-  flexDirection: "column",
-  alignItems: "center",
-  justifyContent: "center",
-  gap: "1rem",
-  padding: "0 var(--layout-gutter)",
-  boxSizing: "border-box",
-};
-
-const mobileProjectImage: CSSProperties = {
-  position: "static",
-  top: "auto",
-  left: "auto",
-  transform: "none",
-  width: "100%",
-  maxWidth: "560px",
-};
-
-/** Plain block under the cover — same column width, so the two edges line up. */
-const mobileTextContent: CSSProperties = {
-  width: "100%",
-  maxWidth: "560px",
-  display: "flex",
-  flexDirection: "column",
-  gap: "8px",
-};
-
-const mobileEyebrow: CSSProperties = {
-  fontSize: "13px",
-  letterSpacing: "0.18em",
-};
-
-const mobileTitle: CSSProperties = {
-  fontSize: "clamp(26px, 7.5vw, 38px)",
-};
-
-const mobileSubtitle: CSSProperties = {
-  fontSize: "15px",
-};
-
-const projectImage: CSSProperties = {
-  position: "absolute",
-  top: "50%",
-  left: "50%",
-  transform: "translate(-50%, -50%)",
-  width: "50%",
-  aspectRatio: "16 / 9",
-  objectFit: "cover",
-  zIndex: 1,
-};
-
-/**
- * Darkens the part of the cover the text column lies on, so the white type has
- * something to sit against. Shape and defaults live in src/data/coverScrim.ts;
- * per-project values come from Firestore and are editable in the admin panel.
- *
- * `pointerEvents: none` keeps it out of the anchor's way — the whole panel is
- * one link, and the scrim covers the middle of it.
- */
-function coverScrimFor(project: Project): CSSProperties | null {
-  const background = coverScrimGradient(project.scrimStrength, project.scrimWidth);
-  if (!background) return null;
-  return { ...projectImage, zIndex: 1, background, pointerEvents: "none" };
-}
-
-const textContent: CSSProperties = {
-  position: "absolute",
-  zIndex: 2,
-  width: "clamp(10%, 30%, 600px)",
-  top: "calc(50% - (50vw * 9 / 32))",
-  left: "calc(15%)",
-  display: "flex",
-  flexDirection: "column",
-  gap: "8px",
-};
-
-const eyebrow: CSSProperties = {
-  fontSize: "18px",
-  fontWeight: 600,
-  letterSpacing: "0.15em",
-  textTransform: "uppercase",
-  color: "white",
-  margin: 0,
-  textShadow: "0px 2px 4px rgba(0, 0, 0, 0.8), 0px 4px 16px rgba(0, 0, 0, 0.6)",
-};
-
-const title: CSSProperties = {
-  fontSize: "42px",
-  fontWeight: 700,
-  margin: 0,
-  color: "white",
-  fontFamily: "DM Sans, sans-serif",
-  letterSpacing: "0.05em",
-  lineHeight: 1.1,
-  textTransform: "uppercase",
-  textShadow: "0px 2px 8px rgba(0, 0, 0, 0.8), 0px 6px 24px rgba(0, 0, 0, 0.6)",
-};
-
-const subtitle: CSSProperties = {
-  fontSize: "16px",
-  lineHeight: 1.6,
-  color: "rgba(255, 255, 255, 0.95)",
-  margin: 0,
-  fontFamily: '"Space Grotesk", sans-serif',
-  textShadow: "0px 2px 4px rgba(0, 0, 0, 0.8), 0px 4px 16px rgba(0, 0, 0, 0.6)",
 };
 
 const projectsSection: CSSProperties = {

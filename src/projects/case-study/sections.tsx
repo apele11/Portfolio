@@ -995,7 +995,7 @@ export function DeckSlides({
               aria-label={`Slide ${zoomed + 1} of ${count}, full size`}
               onClick={closeZoom}
             >
-              <div className="cs-lightbox__stage" ref={stageRef} onClick={(e) => e.stopPropagation()}>
+              <div className="cs-lightbox__stage" ref={stageRef} data-lenis-prevent onClick={(e) => e.stopPropagation()}>
                 {/* The carousel copy sits behind as a background while the
                     high-resolution one is still arriving, so a tap resolves to
                     a picture immediately and then sharpens, rather than to an

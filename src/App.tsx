@@ -1,6 +1,7 @@
 import { Suspense, lazy } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Home from "./home/page";
+import { useSmoothScroll } from "./smoothScroll";
 
 // Home is imported eagerly: it is the landing route, and splitting it would add
 // a second network round trip in front of the content the user came for. Every
@@ -16,6 +17,8 @@ const ProjectPage = lazy(() => import("./projects/page"));
 const Admin = import.meta.env.DEV ? lazy(() => import("./components/Admin")) : null;
 
 export default function App() {
+  useSmoothScroll();
+
   return (
     <BrowserRouter>
       <Suspense fallback={null}>

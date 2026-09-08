@@ -10,8 +10,17 @@ import { useEffect, useState } from "react";
  * every panel on the page mid-scroll. `svh` fits and never changes; the strip
  * the bar later vacates is left to the fixed shader canvas behind everything.
  */
-export const VIEWPORT_HEIGHT =
-  typeof CSS !== "undefined" && CSS.supports?.("height", "100svh") ? "100svh" : "100vh";
+const SUPPORTS_SVH =
+  typeof CSS !== "undefined" && CSS.supports?.("height", "100svh");
+
+export const VIEWPORT_HEIGHT = SUPPORTS_SVH ? "100svh" : "100vh";
+
+/**
+ * The unit behind `VIEWPORT_HEIGHT`, for styles that want a fraction of the
+ * panel rather than the whole thing. Same reasoning: `svh` where it exists so
+ * the value never retargets mid-scroll, `vh` as the fallback.
+ */
+export const VIEWPORT_UNIT = SUPPORTS_SVH ? "svh" : "vh";
 
 const MOBILE_QUERY = "(max-width: 768px)";
 

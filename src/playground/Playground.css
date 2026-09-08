@@ -1,3 +1,49 @@
+/* ------------------------------------------------------------------ intro
+
+   These were inline styles, which is precisely why the heading could not
+   respond: a style attribute holds no media query and no container context, so
+   a fixed 3rem stayed 3rem on a 375px phone and the sentence alone filled the
+   first screen before a single shader appeared.
+
+   clamp() rather than breakpoints, because the failure is gradual — the line
+   scales with the viewport and only stops at the two ends. The vw term is what
+   does the work; the rem bounds keep it from collapsing on a small phone or
+   swelling on a wide desktop. */
+
+.playground-page {
+  min-height: 100vh;
+  background-color: #000;
+  color: #fff;
+  /* Clears the fixed navbar, which needs less clearance on a short screen. */
+  padding-top: clamp(4.5rem, 14vw, 7rem);
+}
+
+.playground-intro {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  text-align: center;
+  padding: clamp(2rem, 8vw, 6rem) clamp(1.25rem, 4vw, 2rem) clamp(2rem, 6vw, 4rem);
+}
+
+.playground-intro-title {
+  margin: 0;
+  font-family: "itc-benguiat-std-book", sans-serif;
+  font-size: clamp(1.65rem, 6.4vw, 3rem);
+  line-height: 1.12;
+  max-width: 800px;
+  text-wrap: balance;
+}
+
+.playground-intro-subtitle {
+  margin: 1rem 0 0 0;
+  font-family: "Space Grotesk", sans-serif;
+  font-size: clamp(0.85rem, 3.2vw, 1.25rem);
+  opacity: 0.6;
+  letter-spacing: 0.05em;
+}
+
 .playground-container {
   max-width: 1400px;
   margin: 0 auto;
@@ -61,52 +107,70 @@
   transform: translateY(-4px);
 }
 
-.playground-tile-link {
+/* The whole tile is the control. Reset rather than style: everything visible
+   here is the media, and the button is only the hit target around it. */
+.playground-tile-button {
+  position: relative;
   display: block;
   width: 100%;
   height: 100%;
-  text-decoration: none;
+  padding: 0;
+  border: none;
+  background: none;
+  cursor: pointer;
+  color: inherit;
+  font: inherit;
 }
 
-/* Held back until hover or keyboard focus so it never competes with the image,
-   but still reachable — an unlabelled shader tells a reader nothing. */
-.playground-tile-caption {
+/* The press. On a phone this is the whole of the feedback, so it is a real
+   state rather than a hover consolation prize. The tap highlight is suppressed
+   because this replaces it. */
+.playground-tile-button {
+  -webkit-tap-highlight-color: transparent;
+}
+
+.playground-tile-button:active {
+  transform: scale(0.985);
+}
+
+.playground-tile-button:focus-visible {
+  outline: 2px solid #ffffff;
+  outline-offset: -2px;
+}
+
+/* The standing affordance. Always visible, because a touch device has no hover
+   to reveal one with — a hover-only cue leaves phones with a grid of inert
+   looking squares. Small, cornered and translucent so it costs the media as
+   little as possible while still reading as a control. */
+.playground-tile-affordance {
   position: absolute;
-  inset: auto 0 0 0;
-  padding: 1rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  background: linear-gradient(0deg, rgba(0, 0, 0, 0.85) 0%, rgba(0, 0, 0, 0) 100%);
-  opacity: 0;
-  transform: translateY(6px);
-  transition: opacity 0.3s ease, transform 0.3s ease;
-  pointer-events: none;
+  top: 0.6rem;
+  right: 0.6rem;
+  width: 26px;
+  height: 26px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  color: #ffffff;
+  background: rgba(0, 0, 0, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  opacity: 0.6;
+  transition: opacity 0.25s ease, background-color 0.25s ease, transform 0.25s ease;
 }
 
-.playground-tile:hover .playground-tile-caption,
-.playground-tile:focus-within .playground-tile-caption {
-  opacity: 1;
-  transform: translateY(0);
-}
-
-/* Coarse pointers have no hover to reveal it with, so it stays put. */
+/* No hover will ever come to brighten it here, so it rests at the weight the
+   hover state would otherwise take it to. */
 @media (hover: none) {
-  .playground-tile-caption {
-    opacity: 1;
-    transform: none;
+  .playground-tile-affordance {
+    opacity: 0.85;
   }
 }
 
-.playground-tile-title {
-  font-family: "itc-benguiat-std-book", sans-serif;
-  font-size: 1.05rem;
-  color: #ffffff;
-  letter-spacing: -0.01em;
-}
-
-.playground-tile .playground-tags {
-  margin-bottom: 0;
+.playground-tile:hover .playground-tile-affordance,
+.playground-tile:focus-within .playground-tile-affordance {
+  opacity: 1;
+  background: rgba(0, 0, 0, 0.7);
+  transform: rotate(90deg);
 }
 
 /* Fills whichever container it is in — the tile's aspect box, or the feature's
@@ -231,6 +295,139 @@
   transform: translate(2px, -2px);
 }
 
+/* ---------------------------------------------------------------- notes dialog
+
+   Native <dialog>, so the backdrop, focus trap, Escape handling and focus
+   restore are the platform's rather than ours. Only the appearance is here. */
+
+.playground-dialog {
+  padding: 0;
+  border: none;
+  background: none;
+  max-width: min(920px, calc(100vw - 3rem));
+  max-height: calc(100vh - 3rem);
+  color: #ffffff;
+  overflow: visible;
+}
+
+.playground-dialog::backdrop {
+  background: rgba(0, 0, 0, 0.72);
+  backdrop-filter: blur(6px);
+}
+
+.playground-dialog-panel {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  background: #0a0a0c;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  max-height: calc(100vh - 3rem);
+  overflow: hidden;
+}
+
+/* Stacks under the writing on narrow viewports, where two columns would leave
+   the prose in a gutter. */
+@media (max-width: 760px) {
+  .playground-dialog-panel {
+    grid-template-columns: minmax(0, 1fr);
+    overflow-y: auto;
+  }
+}
+
+.playground-dialog-media {
+  position: relative;
+  background: #060607;
+  aspect-ratio: 1 / 1;
+  overflow: hidden;
+}
+
+.playground-dialog-body {
+  padding: 2rem;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.playground-dialog-title {
+  font-family: "itc-benguiat-std-book", sans-serif;
+  font-size: 1.6rem;
+  line-height: 1.15;
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+
+.playground-dialog-description {
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 0.92rem;
+  line-height: 1.55;
+  margin: 0;
+  opacity: 0.75;
+}
+
+.playground-dialog-section {
+  margin-top: 0.5rem;
+}
+
+.playground-dialog-section h3 {
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  margin: 0 0 0.4rem 0;
+  opacity: 0.5;
+  font-weight: 500;
+}
+
+.playground-dialog-section p {
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 0.92rem;
+  line-height: 1.55;
+  margin: 0;
+  opacity: 0.85;
+}
+
+.playground-dialog-sources {
+  list-style: none;
+  padding: 0;
+  margin: 1.25rem 0 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  padding-top: 1.25rem;
+}
+
+/* Attribution, not a headline: it sits below the live link and reads quieter. */
+.playground-dialog-credit {
+  opacity: 0.6;
+  font-style: italic;
+}
+
+.playground-dialog-credit:hover {
+  opacity: 0.9;
+}
+
+.playground-dialog-close {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.75rem;
+  z-index: 1;
+  background: none;
+  border: none;
+  color: #ffffff;
+  font-size: 1.75rem;
+  line-height: 1;
+  padding: 0.25rem 0.5rem;
+  cursor: pointer;
+  opacity: 0.6;
+  transition: opacity 0.2s ease;
+}
+
+.playground-dialog-close:hover {
+  opacity: 1;
+}
+
 /* ---------------------------------------------------------------------------
  * Responsive overrides.
  *
@@ -276,13 +473,24 @@
   .playground-card .playground-media-wrapper {
     min-height: 300px;
   }
-  /*
-   * No tile caption at all here. A touch screen has no hover to reveal it with,
-   * so it would sit permanently over a ~165px tile and cover the work it is
-   * meant to label. The <video> keeps its aria-label, so the tile is still
-   * named for a screen reader — this drops the visible layer only.
-   */
-  .playground-tile-caption {
-    display: none;
+}
+
+/* The lift and the press are decoration; the affordance's visibility is not,
+   so only the movement is dropped here. */
+@media (prefers-reduced-motion: reduce) {
+  .playground-tile,
+  .playground-tile-button,
+  .playground-tile-affordance {
+    transition: none;
+  }
+  .playground-tile:hover {
+    transform: none;
+  }
+  .playground-tile-button:active {
+    transform: none;
+  }
+  .playground-tile:hover .playground-tile-affordance,
+  .playground-tile:focus-within .playground-tile-affordance {
+    transform: none;
   }
 }

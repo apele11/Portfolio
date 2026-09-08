@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import NavBar from "../components/NavBar";
 import { PLAYGROUND_ITEMS } from "../data/playground";
 import type { PlaygroundItem } from "../data/playground";
@@ -73,6 +73,26 @@ function Tags({ item }: { item: PlaygroundItem }) {
   );
 }
 
+/** Leaves-the-site arrow, shared by the feature link and the tile links. */
+function ArrowOut() {
+  return (
+    <svg
+      width="14"
+      height="14"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <line x1="7" y1="17" x2="17" y2="7"></line>
+      <polyline points="7 7 17 7 17 17"></polyline>
+    </svg>
+  );
+}
+
 function LiveLink({ item }: { item: PlaygroundItem }) {
   // Omitted for sketches that only ever existed as a capture — there is nothing
   // to point at, and a dead link costs more than a missing one.
@@ -80,19 +100,7 @@ function LiveLink({ item }: { item: PlaygroundItem }) {
   return (
     <a href={item.liveUrl} target="_blank" rel="noopener noreferrer" className="playground-link">
       View Live Project
-      <svg
-        width="14"
-        height="14"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      >
-        <line x1="7" y1="17" x2="17" y2="7"></line>
-        <polyline points="7 7 17 7 17 17"></polyline>
-      </svg>
+      <ArrowOut />
     </a>
   );
 }
@@ -116,22 +124,168 @@ function FeatureCard({ item }: { item: PlaygroundItem }) {
   );
 }
 
+/** Every outbound destination a sketch has, in one list. */
+function SourceLinks({ item }: { item: PlaygroundItem }) {
+  const sources = item.notes?.sources ?? [];
+  if (!item.liveUrl && !item.credit && sources.length === 0) return null;
+
+  return (
+    <ul className="playground-dialog-sources">
+      {item.liveUrl && (
+        <li>
+          <a
+            href={item.liveUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="playground-link"
+          >
+            Open on Shadertoy
+            <ArrowOut />
+          </a>
+        </li>
+      )}
+      {item.credit && (
+        <li>
+          <a
+            href={item.credit.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="playground-link playground-dialog-credit"
+          >
+            Written after {item.credit.label}
+            <ArrowOut />
+          </a>
+        </li>
+      )}
+      {sources.map((source) => (
+        <li key={source.url}>
+          <a
+            href={source.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="playground-link"
+          >
+            {source.label}
+            <ArrowOut />
+          </a>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+/**
+ * The notes behind one sketch.
+ *
+ * A native <dialog> driven by showModal(), rather than a hand-rolled overlay,
+ * because that is what supplies Escape-to-close, the focus trap, inertness of
+ * the page behind it, and focus returning to the tile on close. All of it is
+ * behaviour that has to exist and none of it is behaviour worth writing again.
+ */
+function NotesDialog({
+  item,
+  open,
+  onClose,
+}: {
+  item: PlaygroundItem;
+  open: boolean;
+  onClose: () => void;
+}) {
+  const ref = useRef<HTMLDialogElement>(null);
+  const pressedBackdrop = useRef(false);
+
+  useEffect(() => {
+    const dialog = ref.current;
+    if (!dialog) return;
+    // showModal() throws if the dialog is already open, and close() on a closed
+    // dialog fires a second `close` event, so both are guarded on actual state.
+    if (open && !dialog.open) dialog.showModal();
+    if (!open && dialog.open) dialog.close();
+  }, [open]);
+
+  const notes = item.notes;
+
+  return (
+    <dialog
+      ref={ref}
+      className="playground-dialog"
+      onClose={onClose}
+      /*
+       * Close on backdrop click, where "the backdrop" is the dialog element
+       * itself: the panel fills it, so anything inside reports the panel as the
+       * target instead.
+       *
+       * The press and the release both have to land there. Testing the click
+       * alone closes the dialog the instant it opens — showModal() puts a
+       * full-viewport backdrop under a cursor that is already mid-click, and
+       * the release lands on it. Requiring the press as well means that stray
+       * release has no matching press and is ignored, and it also stops a drag
+       * that began on the text from closing the dialog when it ends outside.
+       */
+      onMouseDown={(event) => {
+        pressedBackdrop.current = event.target === ref.current;
+      }}
+      onClick={(event) => {
+        if (pressedBackdrop.current && event.target === ref.current) onClose();
+        pressedBackdrop.current = false;
+      }}
+    >
+      <div className="playground-dialog-panel">
+        <button
+          type="button"
+          className="playground-dialog-close"
+          onClick={onClose}
+          aria-label="Close notes"
+        >
+          ×
+        </button>
+
+        <div className="playground-dialog-media">
+          {/* Remounted with the dialog, so the clip starts from the top rather
+              than joining the tile's loop wherever it happens to be. */}
+          {open && <Media item={item} />}
+        </div>
+
+        <div className="playground-dialog-body">
+          <h2 className="playground-dialog-title">{item.title}</h2>
+          <Tags item={item} />
+          <p className="playground-dialog-description">{item.description}</p>
+
+          {notes?.exploring && (
+            <section className="playground-dialog-section">
+              <h3>What I was exploring</h3>
+              <p>{notes.exploring}</p>
+            </section>
+          )}
+
+          {notes?.struggle && (
+            <section className="playground-dialog-section">
+              <h3>Where I got stuck</h3>
+              <p>{notes.struggle}</p>
+            </section>
+          )}
+
+          <SourceLinks item={item} />
+        </div>
+      </div>
+    </dialog>
+  );
+}
+
 /**
  * Bare media on the page ground, with its title and tags held back until hover
  * or keyboard focus. The reference layout carries no tile captions at all, but
  * an unlabelled shader is just a coloured rectangle to anyone reading this as
  * work — so the label stays, it just does not compete with the image.
+ *
+ * The tile is a button rather than a link out. A sketch has more than one
+ * destination and more to say than a caption holds, so the click opens the
+ * notes and every link lives in there. It also settles a markup problem: an
+ * anchor cannot contain another anchor, and a tile wrapping two of them gets
+ * torn apart by the parser rather than rendered.
  */
 function Tile({ item }: { item: PlaygroundItem }) {
-  const body = (
-    <>
-      <Media item={item} />
-      <figcaption className="playground-tile-caption">
-        <span className="playground-tile-title">{item.title}</span>
-        <Tags item={item} />
-      </figcaption>
-    </>
-  );
+  const [open, setOpen] = useState(false);
 
   return (
     <figure
@@ -141,18 +295,40 @@ function Tile({ item }: { item: PlaygroundItem }) {
         aspectRatio: item.aspect ?? "1 / 1",
       }}
     >
-      {item.liveUrl ? (
-        <a
-          href={item.liveUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="playground-tile-link"
-        >
-          {body}
-        </a>
-      ) : (
-        body
-      )}
+      <button
+        type="button"
+        className="playground-tile-button"
+        onClick={() => setOpen(true)}
+        aria-label={`${item.title} — read the notes`}
+      >
+        <Media item={item} />
+        {/*
+          The only standing sign that a tile does something. It has to be
+          permanent rather than revealed on hover: a touch device never hovers,
+          so a hover-only affordance leaves half the visitors with nothing. It
+          is small and cornered instead of a caption because the media is the
+          content and anything laid across it is in the way.
+
+          The title is not lost with the caption gone — it is on the button's
+          aria-label, so a screen reader still announces which shader this is.
+        */}
+        <span className="playground-tile-affordance" aria-hidden="true">
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+          >
+            <line x1="12" y1="5" x2="12" y2="19" />
+            <line x1="5" y1="12" x2="19" y2="12" />
+          </svg>
+        </span>
+      </button>
+
+      <NotesDialog item={item} open={open} onClose={() => setOpen(false)} />
     </figure>
   );
 }
@@ -166,22 +342,15 @@ export default function PlaygroundPage() {
   });
 
   return (
-    <div
-      style={{
-        minHeight: "100vh",
-        backgroundColor: "#000",
-        color: "#fff",
-        paddingTop: "7rem", // space for fixed navbar
-      }}
-    >
+    <div className="playground-page">
       <NavBar />
-      
+
       {/* Intro Header */}
-      <div style={{ display: "flex", flexDirection: "column", padding: "6rem 2rem 4rem 2rem", alignItems: "center", gap: "0.5rem", textAlign: "center" }}>
-        <h1 style={{ margin: 0, fontFamily: "itc-benguiat-std-book, sans-serif", fontSize: "3rem", lineHeight: 1.1, maxWidth: "800px" }}>
+      <div className="playground-intro">
+        <h1 className="playground-intro-title">
           This is a collection of works I have made to explore my interests and skills.
         </h1>
-        <p style={{ margin: "1rem 0 0 0", fontFamily: '"Space Grotesk", sans-serif', fontSize: "1.25rem", opacity: 0.6, letterSpacing: "0.05em" }}>
+        <p className="playground-intro-subtitle">
           three.js | glsl | JS | Shader | WebGl
         </p>
       </div>

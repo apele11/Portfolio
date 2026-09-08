@@ -20,6 +20,25 @@ export interface PlaygroundItem {
    * the visitor at a dead end.
    */
   liveUrl?: string;
+  /**
+   * Source a sketch was written from, when it was written by following one.
+   * Rendered as "after <label>" beside the live link, because a study worked
+   * from a tutorial is still worth showing and is only worth showing honestly.
+   */
+  credit?: { label: string; url: string };
+  /**
+   * The notes shown in the tile's dialog. Every field is optional and the
+   * dialog drops the section rather than printing a heading over nothing, so a
+   * sketch with only a description still opens to something worth reading.
+   *
+   * `struggle` is the one that earns the dialog: the description says what the
+   * shader is, and this says what it cost to get there.
+   */
+  notes?: {
+    exploring?: string;
+    struggle?: string;
+    sources?: { label: string; url: string }[];
+  };
   tags: string[];
   /**
    * `feature` is the large captioned card; `tile` (the default) is bare media on
@@ -58,6 +77,11 @@ export const PLAYGROUND_ITEMS: PlaygroundItem[] = [
       "A sphere rendered without geometry: a signed distance function marched per pixel in a fragment shader, lit from the surface normal recovered out of the distance field's gradient.",
     type: "video",
     mediaUrl: `${ASSETS}/RaymarchedSphere.mp4`,
+    liveUrl: "https://www.shadertoy.com/view/fftGzf",
+    notes: {
+      exploring: "PLACEHOLDER — what you set out to learn here.",
+      struggle: "PLACEHOLDER — the specific thing that broke and how you tracked it down. Black normals, banding in the march, step count against framerate."
+    },
     tags: ["GLSL", "Raymarching", "SDF", "WebGL"]
   },
   {
@@ -67,6 +91,11 @@ export const PLAYGROUND_ITEMS: PlaygroundItem[] = [
       "A heart built by folding and combining primitive distance fields, then animated by driving the blend between them over time.",
     type: "video",
     mediaUrl: `${ASSETS}/HeartSDF.mp4`,
+    liveUrl: "https://www.shadertoy.com/view/7f3GW8",
+    notes: {
+      exploring: "PLACEHOLDER — what you set out to learn here.",
+      struggle: "PLACEHOLDER — what fought you while folding the primitives together."
+    },
     tags: ["GLSL", "SDF", "Shader"]
   },
   {
@@ -76,6 +105,11 @@ export const PLAYGROUND_ITEMS: PlaygroundItem[] = [
       "Distance fields laid out on a line, exploring how smooth-minimum blending makes separate shapes read as one continuous surface.",
     type: "video",
     mediaUrl: `${ASSETS}/LinearSDF.mp4`,
+    liveUrl: "https://www.shadertoy.com/view/NfcGD8",
+    notes: {
+      exploring: "PLACEHOLDER — what you set out to learn here.",
+      struggle: "PLACEHOLDER — what the smooth minimum did that you did not expect."
+    },
     tags: ["GLSL", "SDF", "Shader"]
   },
   {
@@ -85,6 +119,15 @@ export const PLAYGROUND_ITEMS: PlaygroundItem[] = [
       "One circle, repeated across space by wrapping the coordinate system back on itself — the field is drawn once and the domain does the tiling.",
     type: "video",
     mediaUrl: `${ASSETS}/SpatialRepetitionCircles.mp4`,
+    liveUrl: "https://www.shadertoy.com/view/ffjGRW",
+    credit: {
+      label: "kishimisu",
+      url: "https://youtu.be/f4s1h2YETNY"
+    },
+    notes: {
+      exploring: "PLACEHOLDER — what you set out to learn here.",
+      struggle: "PLACEHOLDER — what went wrong when you wrapped the coordinate system, and what you added beyond the tutorial."
+    },
     tags: ["GLSL", "Domain Repetition", "Shader"]
   }
 ];

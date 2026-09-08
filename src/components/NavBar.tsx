@@ -1,5 +1,6 @@
 import { useEffect, useState, useRef } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
+import { scrollToTop } from "../smoothScroll";
 import type { CSSProperties } from "react";
 import { prefetchPlayground } from "../playgroundPrefetch";
 
@@ -98,10 +99,10 @@ export default function NavBar() {
 
     // wait for route change, then scroll
     setTimeout(() => {
-      window.scrollTo({ top: 0, behavior: "smooth" });
+      scrollToTop();
     }, 50);
   } else {
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    scrollToTop();
   }
 };
 

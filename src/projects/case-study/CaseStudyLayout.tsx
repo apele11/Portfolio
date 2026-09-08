@@ -3,6 +3,7 @@ import type { ProjectDetail } from "../../types/project";
 import DefaultProjectHero from "../layouts/DefaultProjectHero";
 import DiscoverMore from "./DiscoverMore";
 import "./case-study.css";
+import { scrollToTop } from "../../smoothScroll";
 
 interface CaseStudyLayoutProps {
   project: ProjectDetail;
@@ -24,7 +25,7 @@ interface CaseStudyLayoutProps {
  */
 export default function CaseStudyLayout({ project, onBack, tone = "warm", children }: CaseStudyLayoutProps) {
   useEffect(() => {
-    window.scrollTo(0, 0);
+    scrollToTop(false);
   }, []);
 
   const skin = {

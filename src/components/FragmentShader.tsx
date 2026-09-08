@@ -43,6 +43,23 @@ interface ShaderUniforms {
 /** The shader's own default stops, reused by the no-WebGL gradient fallback. */
 const FALLBACK_COLORS = ["#260b54", "#095f75", "#2b716b", "#a9a2d7"] as const;
 
+/**
+ * The warp's exact period in `uFlowTime`.
+ *
+ * `t` enters `warpSineFeedback` only as an additive phase inside sin/cos, so
+ * those terms repeat every 2π. The one other time-dependent term is the 0.4-rate
+ * wobble in `phase`, which repeats every 2π/0.4 = 5π. The smallest T satisfying
+ * both is T = 5·2π = 2·5π = 10π, so the image returns *exactly* to its starting
+ * state every 10π — no crossfade or seam needed to hide the wrap.
+ *
+ * (Exact while the pointer is still and the palette has settled. The mouse term
+ * and `uColorOffset` offset the loop rather than breaking it, and both come to
+ * rest on their own.)
+ */
+const LOOP_PERIOD = 10 * Math.PI;
+
+
+
 export interface HeroBackgroundProps {
   uniformsRef?: React.Ref<ShaderUniforms | null>;
   fixed?: boolean;
@@ -205,8 +222,17 @@ void main(){
   float z = 7.0;
   p /= z;
 
-  float t = uFlowTime;
-  vec2 mouse01 = mix(vec2(0.5), uMouse, 0.2);
+  // Wrapped into the warp's exact period. Besides guaranteeing the loop, this
+  // caps a precision bug: uFlowTime used to grow without bound, and highp's
+  // 24-bit mantissa makes sin(p + t) visibly coarser the longer the page is open.
+  float t = mod(uFlowTime, ${LOOP_PERIOD.toFixed(9)});
+  // How far the cursor's travel deforms the warp. 0.2 was too little to see;
+  // 0.75 was overstimulating. This sits between them, at roughly +/-0.66 rad of
+  // phase corner to corner. The cursor enters the warp through sin/cos only, so
+  // the term is periodic: a circular gesture traces a closed path in phase and
+  // the shapes deform and come back.
+  const float MOUSE_STRENGTH = 0.42;
+  vec2 mouse01 = mix(vec2(0.5), uMouse, MOUSE_STRENGTH);
 
   // Apply sine feedback warp
   vec2 w = warpSineFeedback(p + uColorOffset, t, mouse01);
@@ -290,11 +316,43 @@ void main(){
 
     const mouseTarget = new THREE.Vector2(0.5, 0.5);
     const mouseSmooth = new THREE.Vector2(0.5, 0.5);
-    const lastMouse = new THREE.Vector2(0.5, 0.5);
 
-    let drive = 0;
+    // Advanced only while the palette is in transit between projects. It
+    // deliberately does NOT integrate pointer movement: pointer *speed* is a
+    // rate, so accumulating it measured how far the cursor had travelled, and a
+    // path returning to where it started still added to the total. That ratchet
+    // is what made the background feel like it was going somewhere and never
+    // coming back. The cursor now enters through position alone, below.
+    //
+    // The speed term that fed it (`drive`, with tauDrive/driveGain and a
+    // lastMouse probe) went with it: once it stopped reaching the image it was
+    // computed every frame and read only by the redraw gate, where it outlived
+    // the cursor smoothing and held the gate open for ~4.7s after every move.
     let flowTime = 0;
     let raf = 0;
+    // Declared here rather than beside the tick loop: the visibility observer
+    // below resyncs it, and a callback reaching a `let` from above its
+    // declaration only works by virtue of being async. Too subtle to rely on.
+    let last = performance.now();
+
+    // Nothing is drawn while the canvas is off screen. A `fixed` canvas always
+    // intersects, which is correct; it is the in-flow heroes on the case-study
+    // pages that this spares, since scrolling past one would otherwise keep
+    // repainting it.
+    let onScreen = true;
+    const visibility = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) onScreen = entry.isIntersecting;
+        if (onScreen) {
+          // Resync the clock: dt is capped, but a canvas that has been off
+          // screen for a minute should resume, not jump.
+          last = performance.now();
+          needsRender = true;
+        }
+      },
+      { threshold: 0 }
+    );
+    visibility.observe(canvas);
 
     const onPointerMove = (e: PointerEvent) => {
       /**
@@ -322,11 +380,15 @@ void main(){
 
     window.addEventListener("pointermove", onPointerMove, { passive: true });
 
-    let last = performance.now();
 
-    const tauMouse = 0.12;
-    const tauDrive = 0.20;
-    const driveGain = 1.2;
+    // Seconds for the shader's idea of the cursor to catch up to the real one.
+    // This is the calm dial, separate from how far the warp bends: at 0.12 the
+    // image snapped to the pointer and read as twitchy no matter how small the
+    // deformation was. Long enough now that the blobs lag and drift after the
+    // cursor rather than tracking it.
+    const tauMouse = 0.5;
+    // Rate for the pointer and palette-transition contributions only. Nothing
+    // advances the flow on a timer — see the scroll mapping below.
     const flowSpeed = 0.5;
 
     const colorOffset = new THREE.Vector2(0, 0);
@@ -345,10 +407,10 @@ void main(){
        * 
        * Handles:
        * - Mouse position smoothing with exponential decay
-       * - Drive velocity calculation based on mouse movement
-       * - Flow time animation driven by user interaction
+       * - Palette lerp toward the active project's colours
+       * - Flow time, advanced only while those colours are in transit
        * - Shader uniform updates
-       * - Renderer frame updates
+       * - Renderer frame updates, gated on something having actually moved
        * 
        * @private
        * @returns {void}
@@ -360,14 +422,6 @@ void main(){
       const alphaMouse = 1 - Math.exp(-dt / tauMouse);
       mouseSmooth.lerp(mouseTarget, alphaMouse);
       uniforms.uMouse.value.copy(mouseSmooth);
-
-      const v = mouseSmooth.distanceTo(lastMouse) / Math.max(dt, 1e-4);
-      lastMouse.copy(mouseSmooth);
-
-      const driveTarget = Math.min(1, v * driveGain);
-
-      const alphaDrive = 1 - Math.exp(-dt / tauDrive);
-      drive += (driveTarget - drive) * alphaDrive;
 
       // Calculate color difference between current shader colors and target colors
       let colorDiff = 0;
@@ -384,11 +438,17 @@ void main(){
       uniforms.uColor3.value.lerp(targetColors.uColor3, alphaColor);
       uniforms.uColor4.value.lerp(targetColors.uColor4, alphaColor);
 
-      // Boost the flow animation slightly during color transitions
+      const prevFlow = flowTime;
       if (!reduceMotion) {
+        // Only a palette change moves this now, so it settles the moment the
+        // colours land and the image becomes a pure function of cursor position.
         const transitionBoost = Math.min(2.0, colorDiff * 4.0);
-        flowTime += dt * flowSpeed * (drive + transitionBoost);
+        flowTime += dt * flowSpeed * transitionBoost;
+        // Kept inside one period. The shader wraps too, but a uniform that grows
+        // all session loses mantissa bits before it ever gets there.
+        if (flowTime >= LOOP_PERIOD) flowTime %= LOOP_PERIOD;
       }
+      const flowMoved = Math.abs(flowTime - prevFlow) > 1e-6;
 
       // Spring physics for the position offset
       // Push force is proportional to the color difference
@@ -413,22 +473,23 @@ void main(){
       uniforms.uFlowTime.value = flowTime;
       uniforms.uTime.value = now / 1000;
 
-      // Nothing here animates on its own. uFlowTime only advances while the
-      // pointer is moving or a colour is in transit, and uTime is declared but
-      // unused by the fragment shader — so an untouched page was re-drawing a
-      // pixel-identical frame sixty times a second. That is every frame on a
-      // phone, which has no pointermove at all: the whole cost, none of the
-      // motion. Draw only when something actually moved. The look is unchanged;
-      // the palette transitions between projects still animate, because a
-      // colour in flight keeps this true until it lands.
+      // Draw only when something actually moved, and only while the canvas is
+      // on screen. An untouched page used to re-draw a pixel-identical frame
+      // sixty times a second — the whole cost, none of the motion. Nothing
+      // advances on a clock, so a page nobody is touching still costs nothing.
       const inMotion =
-        mouseSmooth.distanceToSquared(mouseTarget) > 1e-8 ||
-        drive > 1e-4 ||
+        flowMoved ||
+        // Squared distance, so 1e-6 is a real gap of 1e-3 in normalised cursor
+        // space — about a pixel. The smoothing is exponential, so tightening
+        // this any further buys a long tail of frames that redraw a sub-pixel
+        // phase change nobody can see. With tauMouse at 0.5 that tail was worth
+        // roughly two seconds of drawing per cursor movement.
+        mouseSmooth.distanceToSquared(mouseTarget) > 1e-6 ||
         colorDiff > 1e-6 ||
         colorOffset.lengthSq() > 1e-10 ||
         colorOffsetVelocity.lengthSq() > 1e-10;
 
-      if (inMotion || needsRender) {
+      if ((inMotion && onScreen) || needsRender) {
         renderer.render(scene, camera);
         needsRender = false;
       }
@@ -462,6 +523,7 @@ void main(){
 
     return () => {
       cancelAnimationFrame(raf);
+      visibility.disconnect();
       window.removeEventListener("pointermove", onPointerMove);
       window.removeEventListener("resize", resize);
       document.removeEventListener("visibilitychange", onVisibility);
