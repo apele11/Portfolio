@@ -41,3 +41,12 @@ public/assets/*
 # only ever stale build output: it shadows nothing, but it does send anyone
 # editing the <head> to the wrong file. One was committed here once already.
 public/index.html
+
+# Firebase web config. Public by design (it ships in the bundle), but kept out
+# of the repo so each checkout supplies its own; see CLAUDE.md.
+.env
+.env.*
+!.env.example
+
+# Visual Studio workspace state
+.vs/

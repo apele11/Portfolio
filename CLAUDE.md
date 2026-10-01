@@ -29,7 +29,7 @@ Single-page React 19 + TypeScript portfolio site. Content (projects) lives in **
 
 Every route except `/` is `React.lazy`-loaded behind a single `<Suspense>`. **Home is deliberately imported eagerly** — it is the landing route, and splitting it would put a second network round trip in front of the content the user came for. Keep it that way.
 
-`Admin` is gated as `import.meta.env.DEV ? lazy(() => import(...)) : null`, and the ternary is load-bearing: a bare `lazy(() => import(...))` still emits the chunk in a production build, publishing the panel and its hardcoded password as a fetchable file on the live site. The `false` branch makes the dynamic import unreachable so nothing is emitted. Verify with `ls dist/assets | grep -i admin` after building — it must come back empty.
+`Admin` is gated as `import.meta.env.DEV ? lazy(() => import(...)) : null`, and the ternary is load-bearing: a bare `lazy(() => import(...))` still emits the chunk in a production build, publishing the whole CMS as a fetchable file on the live site. (It once also carried a hardcoded password; sign-in is now Firebase Auth, but the old literal is still in git history, so nothing should ever reuse it.) The `false` branch makes the dynamic import unreachable so nothing is emitted. Verify with `ls dist/assets | grep -i admin` after building — it must come back empty.
 
 Page components follow a `src/<route>/page.tsx` convention (`home/`, `about/`, `playground/`, `projects/`).
 
@@ -97,7 +97,7 @@ In-app editor for the `projects` collection: create, edit, delete, and reorder (
 
 Sign-in is Firebase Auth (Email/Password) via `src/auth.ts`. The session persists across reloads, and the header prints the signed-in UID because `firestore.rules` pins write access to it.
 
-**The login form is not the security boundary — `firestore.rules` is.** The panel runs in the browser, so its UI can be bypassed; anyone can talk to Firestore directly using the web config in `.env`, which is public by design and committed. What actually stops a stranger writing to the collection is the rules file.
+**The login form is not the security boundary — `firestore.rules` is.** The panel runs in the browser, so its UI can be bypassed; anyone can talk to Firestore directly using the web config, which is public by design and ships in the production bundle anyway. What actually stops a stranger writing to the collection is the rules file.
 
 ### Firestore security rules (`firestore.rules`)
 Registered in `firebase.json`, so `npm run deploy` now deploys rules alongside hosting. Deploy alone with `firebase deploy --only firestore:rules`. (CI is unaffected — the GitHub Actions workflows use `action-hosting-deploy`, which only touches hosting.)
@@ -303,5 +303,5 @@ The remaining ~1.1s of boot time is only fixable by not making the user look at 
 - TypeScript is `strict` with `noUnusedLocals`/`noUnusedParameters` and `verbatimModuleSyntax` — use `import type { ... }` for type-only imports or the build fails.
 - `verbatimModuleSyntax` also means a value-import used only in type positions is still emitted at runtime. Several components reference `THREE.Color` purely to type a `ShaderUniforms` interface, so they must use `import type * as THREE from "three"` — a plain `import * as THREE` there drags all of Three.js into that chunk. `src/components/FragmentShader.tsx` is the only file that needs the real runtime import.
 - Styling is plain CSS colocated with components/routes (`*.css` next to the `.tsx`); no CSS framework.
-- `.env` holds the Firebase web config as `VITE_FIREBASE_*` vars (public by design for a client Firebase app, but not committed). `cors.json` is the CORS config for the Firebase Storage bucket.
+- `.env` holds the Firebase web config as `VITE_FIREBASE_*` vars (public by design for a client Firebase app, but not committed; `.env.example` lists the keys). It *was* tracked until 2026-10-01 and is still in history. That is harmless for a web config, but it is why the repo going public needed no key rotation. `cors.json` is the CORS config for the Firebase Storage bucket.
 - `scratch.html` at the repo root is a standalone scratch file, not part of the build.
