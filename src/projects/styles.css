@@ -93,7 +93,10 @@
   display: grid;
   grid-template-columns: 3fr 4fr;
   gap: 60px;
-  align-items: top;
+  /* `top` is not a valid value and was silently ignored, leaving the default
+     stretch: the cover column grew to the text column's height and its dim
+     background showed as a strip under the video. */
+  align-items: start;
   margin-bottom: 40px;
 }
 
