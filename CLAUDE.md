@@ -288,7 +288,10 @@ Static gallery of embedded demos (iframes/images), hardcoded in `src/data/playgr
 
 The embeds are third-party pages (GitHub Pages) carrying their own Three.js build, and cost ~1.4s to come up. **Only about 300ms of that is network** — the rest is the demo's own JS execution and WebGL init, which re-runs on every iframe mount and cannot be prefetched away. `src/playgroundPrefetch.ts` handles the network share:
 
-- `warmPlaygroundEmbeds()` loads each embed once in an offscreen iframe, then **removes it**. The teardown is the point — an earlier version left these mounted, leaving a second live WebGL context rendering at 1x1 against the hero shader. Called on idle from the home page.
+- `warmPlaygroundEmbeds()` loads each embed once in an offscreen iframe, then **removes it**. The teardown is the point — an earlier version left these mounted, leaving a second live WebGL context rendering at 1x1 against the hero shader. **Only on intent, never on idle from
+  the home page.** It used to run from an idle callback on `/`, and the demo's
+  ~900ms of script landed inside Lighthouse's window as a long task, charging the
+  landing page's Total Blocking Time for a page nobody had asked for.
 - `prefetchPlaygroundRoute()` pulls the lazily-split route chunk.
 - `prefetchPlayground()` does both, wired to `NavLink`'s `onIntent` (hover/focus/touch) on the PLAYGROUND link.
 - Both no-op under `saveData` or a 2g `effectiveType`.
