@@ -292,6 +292,11 @@ The embeds are third-party pages (GitHub Pages) carrying their own Three.js buil
   the home page.** It used to run from an idle callback on `/`, and the demo's
   ~900ms of script landed inside Lighthouse's window as a long task, charging the
   landing page's Total Blocking Time for a page nobody had asked for.
+- `cancelPlaygroundWarmup()` drops any warm-up frame still loading, and the real
+  embed calls it on mount. A click focuses the nav link, so without an earlier
+  hover the warm-up starts in the same instant as the real iframe; left alone it
+  downloads and boots a second copy of the demo (measured: two 6.6s document
+  loads instead of one 1.7s load).
 - `prefetchPlaygroundRoute()` pulls the lazily-split route chunk.
 - `prefetchPlayground()` does both, wired to `NavLink`'s `onIntent` (hover/focus/touch) on the PLAYGROUND link.
 - Both no-op under `saveData` or a 2g `effectiveType`.

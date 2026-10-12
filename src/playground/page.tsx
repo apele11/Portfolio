@@ -3,6 +3,7 @@ import NavBar from "../components/NavBar";
 import { PLAYGROUND_ITEMS } from "../data/playground";
 import type { PlaygroundItem } from "../data/playground";
 import { useSeo } from "../seo";
+import { cancelPlaygroundWarmup } from "../playgroundPrefetch";
 import "./Playground.css";
 
 /**
@@ -14,6 +15,8 @@ import "./Playground.css";
  */
 function EmbedFrame({ item }: { item: PlaygroundItem }) {
   const [loaded, setLoaded] = useState(false);
+
+  useEffect(cancelPlaygroundWarmup, []);
 
   return (
     <>

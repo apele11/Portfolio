@@ -325,12 +325,43 @@
   overflow: hidden;
 }
 
-/* Stacks under the writing on narrow viewports, where two columns would leave
-   the prose in a gutter. */
+/* Stacks over the writing on narrow viewports, where two columns would leave
+   the prose in a gutter.
+
+   The clip is pinned and only the writing scrolls. This used to be a one-column
+   grid that scrolled as a whole, with the body a second scroller nested inside
+   it and the media row sized by aspect-ratio alone. Mobile Safari composites
+   the <video> on its own layer and got that combination wrong, drawing the
+   text over the clip as it scrolled. One scroller, with the media outside it,
+   leaves nothing that can pass over the video.
+
+   svh rather than vh: on a phone vh is the height with the URL bar hidden, so
+   a panel sized from it runs off the bottom of the screen on open. */
 @media (max-width: 760px) {
+  .playground-dialog,
   .playground-dialog-panel {
-    grid-template-columns: minmax(0, 1fr);
-    overflow-y: auto;
+    max-height: calc(100vh - 3rem);
+    max-height: calc(100svh - 3rem);
+  }
+
+  .playground-dialog-panel {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .playground-dialog-media {
+    flex: none;
+    /* Square while it fits; on a short screen it gives up height so the
+       writing keeps a usable share. The video crops via object-fit. */
+    max-height: 45svh;
+  }
+
+  .playground-dialog-body {
+    flex: 1 1 auto;
+    min-height: 0;
+    padding: 1.5rem;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
   }
 }
 

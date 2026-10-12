@@ -6,6 +6,8 @@ import { PLAYGROUND_ITEMS } from "./data/playground";
 
 let embedsWarmed = false;
 let routeWarmed = false;
+/** Teardowns for warm-up frames still in flight. */
+const pendingWarmups = new Set<() => void>();
 
 /** Respect metered/slow connections — a preview embed is not worth someone's data. */
 function shouldSkip(): boolean {
@@ -49,8 +51,10 @@ export function warmPlaygroundEmbeds(): void {
     const remove = () => {
       if (removed) return;
       removed = true;
+      pendingWarmups.delete(remove);
       frame.remove();
     };
+    pendingWarmups.add(remove);
 
     // `load` fires once subresources are in. Give it a beat for anything the
     // demo fetches during its own init, then stop it rendering.
@@ -61,6 +65,17 @@ export function warmPlaygroundEmbeds(): void {
     frame.src = url;
     document.body.appendChild(frame);
   }
+}
+
+/**
+ * Drops any warm-up frame still loading. Called when the real embed mounts:
+ * a click focuses the nav link, so without an earlier hover the warm-up starts
+ * in the same instant as the real iframe. The two do not share an in-flight
+ * request, so the warm-up would only download and boot a second copy of the
+ * demo alongside the one the user is waiting for.
+ */
+export function cancelPlaygroundWarmup(): void {
+  for (const remove of [...pendingWarmups]) remove();
 }
 
 /** Pull the lazily-split /playground route chunk ahead of the click. */

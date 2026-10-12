@@ -78,10 +78,6 @@ export const PLAYGROUND_ITEMS: PlaygroundItem[] = [
     type: "video",
     mediaUrl: `${ASSETS}/RaymarchedSphere.mp4`,
     liveUrl: "https://www.shadertoy.com/view/fftGzf",
-    notes: {
-      exploring: "PLACEHOLDER — what you set out to learn here.",
-      struggle: "PLACEHOLDER — the specific thing that broke and how you tracked it down. Black normals, banding in the march, step count against framerate."
-    },
     tags: ["GLSL", "Raymarching", "SDF", "WebGL"]
   },
   {
@@ -92,10 +88,6 @@ export const PLAYGROUND_ITEMS: PlaygroundItem[] = [
     type: "video",
     mediaUrl: `${ASSETS}/HeartSDF.mp4`,
     liveUrl: "https://www.shadertoy.com/view/7f3GW8",
-    notes: {
-      exploring: "PLACEHOLDER — what you set out to learn here.",
-      struggle: "PLACEHOLDER — what fought you while folding the primitives together."
-    },
     tags: ["GLSL", "SDF", "Shader"]
   },
   {
@@ -106,10 +98,6 @@ export const PLAYGROUND_ITEMS: PlaygroundItem[] = [
     type: "video",
     mediaUrl: `${ASSETS}/LinearSDF.mp4`,
     liveUrl: "https://www.shadertoy.com/view/NfcGD8",
-    notes: {
-      exploring: "PLACEHOLDER — what you set out to learn here.",
-      struggle: "PLACEHOLDER — what the smooth minimum did that you did not expect."
-    },
     tags: ["GLSL", "SDF", "Shader"]
   },
   {
@@ -123,10 +111,6 @@ export const PLAYGROUND_ITEMS: PlaygroundItem[] = [
     credit: {
       label: "kishimisu",
       url: "https://youtu.be/f4s1h2YETNY"
-    },
-    notes: {
-      exploring: "PLACEHOLDER — what you set out to learn here.",
-      struggle: "PLACEHOLDER — what went wrong when you wrapped the coordinate system, and what you added beyond the tutorial."
     },
     tags: ["GLSL", "Domain Repetition", "Shader"]
   }
