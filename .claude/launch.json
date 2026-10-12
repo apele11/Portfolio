@@ -24,6 +24,19 @@
         "preview"
       ],
       "port": 4173
+    },
+    {
+      "name": "hosting-emulator",
+      "runtimeExecutable": "firebase",
+      "runtimeArgs": [
+        "emulators:start",
+        "--only",
+        "hosting",
+        "--project",
+        "portfolio-cf811"
+      ],
+      "port": 5000,
+      "url": "http://127.0.0.1:5000"
     }
   ]
 }

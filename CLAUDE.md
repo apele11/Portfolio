@@ -27,7 +27,9 @@ Single-page React 19 + TypeScript portfolio site. Content (projects) lives in **
 ### Routing (`src/App.tsx`)
 `react-router-dom` v7 `BrowserRouter`. Routes: `/` (home), `/about`, `/playground`, `/projects/:projectId`. The `/admin` route is **only mounted when `import.meta.env.DEV`** — it does not exist in production builds. Firebase Hosting rewrites all paths to `/index.html` (`firebase.json`), so client routing works on deep links.
 
-Every route except `/` is `React.lazy`-loaded behind a single `<Suspense>`. **Home is deliberately imported eagerly** — it is the landing route, and splitting it would put a second network round trip in front of the content the user came for. Keep it that way.
+Every route except `/` is lazy-loaded behind a single `<Suspense>`, through `lazyRoute()` rather than bare `React.lazy`. A deploy deletes the previous build's chunks, and the `**` rewrite answers a request for a missing chunk with `index.html` (200, `text/html`), which the browser rejects as a module. A tab still running the old build used to unmount the whole app when it navigated, until the visitor refreshed. `lazyRoute()` reloads once onto the current build instead, and a sessionStorage timestamp stops it looping when the chunk is genuinely missing.
+
+`firebase.json` sets the caching that goes with this: `no-cache` on HTML routes (paths with no dot, plus `/index.html`) so a visit always revalidates against the current build, and a year `immutable` on the hashed files directly in `/assets/`. Unhashed media under `/assets/compressed/` keeps Firebase's default, because those names are reused. Both rules are `regex`, not globs. **The hosting emulator cannot check either on Windows:** superstatic rewrites the request path to backslashes before matching, so every header rule silently misses locally. Check the real headers with `curl -I` after a deploy. **Home is deliberately imported eagerly** — it is the landing route, and splitting it would put a second network round trip in front of the content the user came for. Keep it that way.
 
 `Admin` is gated as `import.meta.env.DEV ? lazy(() => import(...)) : null`, and the ternary is load-bearing: a bare `lazy(() => import(...))` still emits the chunk in a production build, publishing the whole CMS as a fetchable file on the live site. (It once also carried a hardcoded password; sign-in is now Firebase Auth, but the old literal is still in git history, so nothing should ever reuse it.) The `false` branch makes the dynamic import unreachable so nothing is emitted. Verify with `ls dist/assets | grep -i admin` after building — it must come back empty.
 
@@ -71,6 +73,13 @@ stays stale in the snapshot until the next build.
 
 The script fails soft: if Firestore is unreachable it warns, keeps the committed
 snapshot, and lets the build continue. Never hand-edit the generated file.
+
+It reads with `getDocsFromServer`, not `getDocs`. Plain `getDocs` falls back to
+the local cache when the SDK decides it is offline, and in a fresh Node process
+that cache is empty, so a flaky connection came back as a *successful* read of
+zero projects. That wiped the snapshot and the sitemap in a commit (17e1a00)
+without a single warning. The server-only read throws instead, which reaches
+`bail()`.
 
 **It is generated but it must stay committed — do not gitignore it.** The
 committed copy is the only real content the grid has before Firestore answers,

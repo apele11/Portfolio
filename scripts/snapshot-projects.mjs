@@ -14,7 +14,7 @@ import { fileURLToPath } from "node:url";
 import { dirname, resolve } from "node:path";
 import { loadEnv } from "vite";
 import { initializeApp } from "firebase/app";
-import { getFirestore, collection, getDocs, terminate } from "firebase/firestore";
+import { getFirestore, collection, getDocsFromServer, terminate } from "firebase/firestore";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const OUT = resolve(ROOT, "src/data/projects.snapshot.ts");
@@ -184,7 +184,12 @@ const db = getFirestore(app);
 const timeout = setTimeout(() => bail("Firestore read timed out after 20s."), 20_000);
 
 try {
-  const snapshot = await getDocs(collection(db, "projects"));
+  // FromServer, not plain getDocs. When the SDK decides it is offline, getDocs
+  // answers from the local cache instead of failing, and in a fresh Node
+  // process that cache is empty: a flaky connection came back as a successful
+  // read of zero projects, and the snapshot and sitemap were both rewritten
+  // empty and committed. This throws instead, so bail() keeps the last good copy.
+  const snapshot = await getDocsFromServer(collection(db, "projects"));
   clearTimeout(timeout);
 
   const cards = snapshot.docs

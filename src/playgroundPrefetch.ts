@@ -82,7 +82,9 @@ export function cancelPlaygroundWarmup(): void {
 export function prefetchPlaygroundRoute(): void {
   if (routeWarmed) return;
   routeWarmed = true;
-  void import("./playground/page");
+  // A failure here is left to the route itself: if the chunk is gone after a
+  // deploy, the lazy route in App.tsx reloads the page when it is clicked.
+  import("./playground/page").catch(() => {});
 }
 
 /** Both warms, for use on a real intent signal like hovering the nav link. */
