@@ -4,6 +4,7 @@ import HeroBackground from "../components/FragmentShader";
 import Hero from "../components/Hero";
 import NavBar from "../components/NavBar";
 import Projects from "../components/Projects";
+import ContactSection from "../components/contact/ContactSection";
 import { useSeo, SITE_TITLE, SITE_DESCRIPTION } from "../seo";
 import { VIEWPORT_HEIGHT } from "../viewport";
 
@@ -55,6 +56,7 @@ export default function Home() {
         {showProjects ? (
           <Projects uniformsRef={uniformsRef} />
         ) : null}
+        <ContactSection uniformsRef={uniformsRef} />
       </div>
     </>
   );

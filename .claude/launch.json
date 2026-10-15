@@ -37,6 +37,20 @@
       ],
       "port": 5000,
       "url": "http://127.0.0.1:5000"
+    },
+    {
+      "name": "functions-emulator",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "--prefix",
+        "functions",
+        "run",
+        "serve",
+        "--",
+        "--project",
+        "portfolio-cf811"
+      ],
+      "port": 5001
     }
   ]
 }

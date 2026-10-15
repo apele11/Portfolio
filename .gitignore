@@ -50,3 +50,7 @@ public/index.html
 
 # Visual Studio workspace state
 .vs/
+
+# Compiled Cloud Functions. `npm run build` in functions/ regenerates it, and
+# firebase.json's predeploy step runs that build before every functions deploy.
+functions/lib/

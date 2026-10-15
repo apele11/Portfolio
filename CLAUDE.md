@@ -14,6 +14,7 @@ npm run assets    # compress dropped media into public/assets/compressed/ (see b
 npm run capture   # screenshot a running site into the asset drop zone (see below)
 npm run snapshot  # regenerate src/data/projects.snapshot.ts from Firestore (see below)
 npm run og        # re-render public/og-image.jpg, the social preview card (see below)
+npm --prefix functions run serve  # build the contact function, start its emulator (see Contact backend)
 ```
 
 There is no test runner configured. `npm run build` runs the TypeScript project build (`tsc -b`) as a strict typecheck gate before Vite bundles, so a green build means types pass.
@@ -291,6 +292,49 @@ either dead or actively shadowing the entry point.
 The cost is paid back by `manualChunks` in `vite.config.ts`, which isolates `node_modules/three` into its own `three` chunk. Vite emits a `<link rel="modulepreload">` for it, so it downloads *in parallel* with the entry chunk rather than queueing behind it — verify with `grep modulepreload dist/index.html` after building. Both start together; execution waits for both. Route-level `React.lazy` (see Routing) is unaffected and still applies.
 
 `HeroBackground` renders a full-viewport animated WebGL background with Three.js and a custom GLSL fragment shader. Its `uColor1`–`uColor4` uniforms are exposed via a `uniformsRef` shared with `Hero` and `Projects`, so hovering project cards can drive the background colors (each project doc carries `color1`–`color4`). Respects `prefers-reduced-motion`. Shader uniform typing is in `src/shaderTypes.ts`.
+
+### Contact section (`src/components/contact/`)
+The last thing on the Works page. A 340vh track with a sticky panel: a sheet of
+paper slides up over the fixed hero shader with the EA monogram cut out of it, the
+cut-out dives through the E until the paper is gone, then the heading splits around
+the form card. `useContactReveal` drives it.
+
+- The monogram is `src/svg/ea-monogram.svg`, traced from `public/EA-Icon.png` and
+  cropped to the letters. The hook hardcodes its viewBox and the E's upright
+  (`STEM_X`, `STEM_W`), because the dive has to land inside a solid stroke or the
+  zoom ends on paper. Re-trace the mark and those constants move with it.
+- The paper's mask is the monogram plus a full-size block composited with
+  `exclude`, so the paper keeps everything *except* the letters. What shows through
+  is the real hero canvas, not a second WebGL context.
+- Progress comes from the section's bounding rect each frame, not ScrollTrigger,
+  whose cached start/end drift when the live Firestore read changes the grid's height.
+- When the section reaches the top it swaps the shader to the hero palette, and
+  hands back the previous palette on the way up.
+- EB Garamond and Jost are requested when the section is a screen away, not with
+  the page, so the landing route gains no render-blocking stylesheet.
+- Under `prefers-reduced-motion` it is one static screen: no paper, card under the heading.
+
+### Contact backend (`functions/`)
+`POST /api/contact` is a 2nd-gen Cloud Function (`contact`, us-central1) reached
+through a Hosting rewrite, so the form is same-origin. It validates, drops honeypot
+hits, throttles per IP in memory (hence `maxInstances: 1`), and sends through
+Resend's REST API to emilyapel11@gmail.com, with Reply-To set to the visitor. Every
+subject starts with `[Portfolio]`; the Gmail filter that files these matches on it.
+
+- The project must be on the **Blaze** plan to deploy functions.
+- Key: `firebase functions:secrets:set RESEND_API_KEY`. Locally, put it in
+  `functions/.secret.local` (gitignored by `*.local`).
+- Sender is Resend's shared `onboarding@resend.dev`, which only delivers to the
+  address that owns the Resend account. Verify emilyapel.com in Resend to send from
+  your own domain, then change `FROM`.
+- **Deploy the function before pushing the rewrite.** CI deploys hosting only
+  (`action-hosting-deploy`), and a hosting release that rewrites to a function that
+  does not exist yet fails. `firebase deploy --only functions` first.
+- Dev: `npm --prefix functions run serve` starts the Functions emulator, and Vite
+  proxies `/api/contact` to it (`vite.config.ts`). Without the emulator the form
+  shows its error state.
+- The reasons list is duplicated in `ContactCard.tsx` and `functions/src/index.ts`;
+  change both.
 
 ### Playground (`src/playground/`)
 Static gallery of embedded demos (iframes/images), hardcoded in `src/data/playground.ts` (`PLAYGROUND_ITEMS`) — not backed by Firestore.

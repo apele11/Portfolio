@@ -24,12 +24,16 @@ export function getLenis(): Lenis | null {
   return lenis;
 }
 
-export function scrollToTop(smooth = true) {
+export function scrollToPosition(top: number, smooth = true) {
   if (lenis) {
-    lenis.scrollTo(0, { immediate: !smooth });
+    lenis.scrollTo(top, { immediate: !smooth });
     return;
   }
-  window.scrollTo({ top: 0, behavior: smooth ? "smooth" : "auto" });
+  window.scrollTo({ top, behavior: smooth ? "smooth" : "auto" });
+}
+
+export function scrollToTop(smooth = true) {
+  scrollToPosition(0, smooth);
 }
 
 export function useSmoothScroll() {

@@ -2,6 +2,22 @@
   "firestore": {
     "rules": "firestore.rules"
   },
+  "functions": [
+    {
+      "source": "functions",
+      "codebase": "default",
+      "ignore": [
+        "node_modules",
+        ".git",
+        "firebase-debug.log",
+        "firebase-debug.*.log",
+        "*.local"
+      ],
+      "predeploy": [
+        "npm --prefix functions run build"
+      ]
+    }
+  ],
   "hosting": {
     "public": "dist",
     "ignore": [
@@ -24,6 +40,13 @@
       }
     ],
     "rewrites": [
+      {
+        "source": "/api/contact",
+        "function": {
+          "functionId": "contact",
+          "region": "us-central1"
+        }
+      },
       {
         "source": "**",
         "destination": "/index.html"
