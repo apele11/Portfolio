@@ -1,5 +1,4 @@
-import { useRef, useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useRef } from "react";
 import HeroBackground from "../components/FragmentShader";
 import Hero from "../components/Hero";
 import NavBar from "../components/NavBar";
@@ -11,30 +10,10 @@ import { VIEWPORT_HEIGHT } from "../viewport";
 
 export default function Home() {
   const uniformsRef = useRef(null);
-  const navigate = useNavigate();
-  const [showProjects, setShowProjects] = useState(true);
 
   // Restores the home tags after a client-side navigation back from a route
   // that set its own; index.html only covers the first paint.
   useSeo({ title: SITE_TITLE, description: SITE_DESCRIPTION, path: "/" });
-
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      // Toggle projects with "1" key
-      if (e.key === "1") {
-        e.preventDefault();
-        setShowProjects((prev) => !prev);
-      }
-      // Navigate to admin with "Escape" key - only in dev mode
-      if (e.key === "Escape" && import.meta.env.DEV) {
-        e.preventDefault();
-        navigate("/admin");
-      }
-    };
-
-    window.addEventListener("keydown", handleKeyDown, true);
-    return () => window.removeEventListener("keydown", handleKeyDown, true);
-  }, []);
 
   return (
     <>
@@ -53,9 +32,7 @@ export default function Home() {
           jump as a 0.70 layout shift on <body>. */}
       <div aria-hidden="true" style={{ height: VIEWPORT_HEIGHT }} />
       <div style={{ position: "relative", zIndex: 2 }}>
-        {showProjects ? (
-          <Projects uniformsRef={uniformsRef} />
-        ) : null}
+        <Projects uniformsRef={uniformsRef} />
         <ContactSection uniformsRef={uniformsRef} />
       </div>
     </>

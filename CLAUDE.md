@@ -103,7 +103,7 @@ build. Net effect: repeated runs are true no-ops, so `npm run dev` leaves the
 tree clean unless the CMS genuinely changed.
 
 ### Admin / CMS (`src/components/Admin.tsx`)
-In-app editor for the `projects` collection: create, edit, delete, and reorder (swaps `order` values) documents via `setDoc`/`deleteDoc`. Dev-only — reach it by pressing **Escape** on the home page, or navigating to `/admin`.
+In-app editor for the `projects` collection: create, edit, delete, and reorder (swaps `order` values) documents via `setDoc`/`deleteDoc`. Dev-only — reach it from the ADMIN nav link (rendered only in dev) or by navigating to `/admin`.
 
 Sign-in is Firebase Auth (Email/Password) via `src/auth.ts`. The session persists across reloads, and the header prints the signed-in UID because `firestore.rules` pins write access to it.
 
