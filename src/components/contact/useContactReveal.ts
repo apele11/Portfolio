@@ -12,18 +12,28 @@ const MARK_W = 1117;
 const MARK_H = 1062;
 
 /**
- * The E's upright, the thickest stroke in the mark: solid from its top edge to
- * its bottom edge and 168 units wide. The dive aims here because the zoom only
- * ends with the viewport covered if it lands inside a stroke. Aimed at the
- * centre of the mark, it lands in the gap between the E and the A and fills
- * the screen with paper.
+ * Where the dive aims: the A, where its diagonal meets the crossbar. The zoom
+ * only ends with the viewport covered if it lands inside a stroke, and the
+ * exact centre of the mark is the gap between the E and the A. This is the
+ * solid point closest to the centre with real thickness around it: a circle of
+ * radius 77 fits inside the letter here, nearly the 85 of the E's upright,
+ * and it sits only 88 units from the centre, about 37px at rest.
+ *
+ * That closeness is what lets the dive be a pure zoom about a fixed point. An
+ * earlier version aimed at the E's upright, 474 units left of centre, and had
+ * to slide the mark sideways to bring it to the middle of the screen. The slide
+ * read as the whole composition lurching off balance.
+ *
+ * Found with a distance transform over the traced bitmap. Re-trace the mark
+ * and these move with it.
  */
-const STEM_X = 84;
-const STEM_W = 168;
+const ANCHOR_X = 644;
+const ANCHOR_Y = 551;
+const ANCHOR_R = 77;
 
 /** Phases, as fractions of the scroll through the section. */
 const GROW = [0, 0.26] as const; // the mark scales up from a speck
-const DIVE = [0.34, 0.62] as const; // the camera finds the E and dives through it
+const DIVE = [0.34, 0.62] as const; // the camera dives through the A
 // Starts as the dive ends, not before: the scrim laid over paper reads as a grey smudge.
 const REVEAL = [0.61, 0.71] as const; // scrim and heading fade in over the shader
 const SPLIT = [0.74, 0.9] as const; // the heading parts...
@@ -36,8 +46,8 @@ const HOLD_HEIGHT = 0.5;
 const HOLD_WIDTH = 0.62;
 /** The mark's starting size, relative to its resting size. */
 const START_RATIO = 0.18;
-/** How far past the panel edges the stem reaches when the dive ends. */
-const OVERSCAN = 1.15;
+/** How far past the farthest panel corner the anchor's circle reaches when the dive ends. */
+const OVERSCAN = 1.08;
 /** Clear space between the card and each half of the heading, px. */
 const SPLIT_PAD = 40;
 /** Margin the halves need from the panel edge to sit beside the card at all, px. */
@@ -49,11 +59,17 @@ const CARD_RISE = 150;
  * eases the wheel, but keyboard and scrollbar scrolling arrive as jumps, and a
  * mask jumping from 9% to full screen in one frame reads as a glitch.
  */
-const SMOOTHING = 0.12;
+const SMOOTHING = 0.18;
+/**
+ * The fastest the reveal will play, in progress per second, so the whole thing
+ * takes at least 2.5s however hard the page is flung. Driven purely by scroll
+ * position, a fast flick compressed the zoom into a few frames, which read as a
+ * snap. Slow scrolling never reaches the cap, so it still tracks 1:1.
+ */
+const MAX_RATE = 0.4;
 
 const easeGrow = gsap.parseEase("power2.out");
 const easeZoom = gsap.parseEase("power1.in");
-const easeGlide = gsap.parseEase("power2.out");
 const easeSplit = gsap.parseEase("power2.inOut");
 const easeEnter = gsap.parseEase("power2.out");
 const clamp01 = gsap.utils.clamp(0, 1);
@@ -105,6 +121,10 @@ export function useContactReveal(enabled: boolean) {
     let startScale = 0;
     let holdScale = 0;
     let endScale = 0;
+    // Where the anchor sits on the panel while the mark is at rest. The dive
+    // zooms about this point, so it never moves.
+    let anchorX = 0;
+    let anchorY = 0;
     // Which way the heading parts, and how far each half travels.
     let axis: "x" | "y" = "x";
     let leadTravel = 0;
@@ -115,7 +135,12 @@ export function useContactReveal(enabled: boolean) {
       vh = panel.clientHeight;
       holdScale = Math.min((HOLD_HEIGHT * vh) / MARK_H, (HOLD_WIDTH * vw) / MARK_W);
       startScale = holdScale * START_RATIO;
-      endScale = OVERSCAN * Math.max(vw / STEM_W, vh / MARK_H);
+      anchorX = vw / 2 + (ANCHOR_X - MARK_W / 2) * holdScale;
+      anchorY = vh / 2 + (ANCHOR_Y - MARK_H / 2) * holdScale;
+      // Big enough that the solid circle around the anchor reaches past the
+      // farthest corner of the panel, which is what guarantees no paper is left.
+      const farthest = Math.hypot(Math.max(anchorX, vw - anchorX), Math.max(anchorY, vh - anchorY));
+      endScale = (OVERSCAN * farthest) / ANCHOR_R;
 
       // Side by side when each half fits in the space beside the card,
       // otherwise one above and one below it. Per side rather than in total,
@@ -151,25 +176,26 @@ export function useContactReveal(enabled: boolean) {
       const cy = vh / 2;
       const dive = segment(p, DIVE);
 
-      // The mark's scale and its top-left corner on the panel.
+      // The mark's scale and its top-left corner on the panel. Both phases are
+      // pure zooms with no pan: the growth about the centre of the mark, the
+      // dive about the anchor. They hand over at rest, where nothing is moving,
+      // so the change of fixed point never shows. Scale is interpolated in log
+      // space, so each reads as a steady zoom rather than one that rushes at
+      // the start and crawls at the end.
       let scale: number;
       let left: number;
+      let top: number;
       if (dive <= 0) {
-        // Interpolated in log space, so the growth reads as a steady zoom
-        // rather than one that rushes at the start and crawls at the end.
         scale = startScale * Math.pow(holdScale / startScale, easeGrow(segment(p, GROW)));
         left = cx - (MARK_W / 2) * scale;
+        top = cy - (MARK_H / 2) * scale;
       } else {
         scale = holdScale * Math.pow(endScale / holdScale, easeZoom(dive));
-        // The stem glides from where it sits in the resting mark to the centre
-        // of the panel, mostly early, so the camera finds the E and then dives.
-        const stemFrom = cx + (STEM_X - MARK_W / 2) * holdScale;
-        const stemX = stemFrom + (cx - stemFrom) * easeGlide(dive);
-        left = stemX - STEM_X * scale;
+        left = anchorX - ANCHOR_X * scale;
+        top = anchorY - ANCHOR_Y * scale;
       }
-      const top = cy - (MARK_H / 2) * scale;
 
-      // Once the stem spans the panel there is no paper left on screen, so the
+      // Once the dive ends there is no paper left on screen, so the
       // paper is hidden outright. The image is identical, and the compositor
       // stops re-rasterising a mask several times the size of the screen on
       // every frame.
@@ -187,11 +213,12 @@ export function useContactReveal(enabled: boolean) {
         mask.style.setProperty("mask-position", position);
       }
 
-      // The nav inks itself dark over paper. Once the stem spans the full width
-      // there is only shader under it, so the marker comes off.
-      const stemLeft = left + (STEM_X - STEM_W / 2) * scale;
-      const stemRight = left + (STEM_X + STEM_W / 2) * scale;
-      const nowOverShader = dive > 0 && stemLeft <= 0 && stemRight >= vw;
+      // The nav inks itself dark over paper. Once the solid circle around the
+      // anchor reaches both top corners there is only shader under the nav, so
+      // the marker comes off.
+      const reach = ANCHOR_R * scale;
+      const nowOverShader =
+        dive > 0 && reach >= Math.hypot(anchorX, anchorY) && reach >= Math.hypot(vw - anchorX, anchorY);
       if (nowOverShader !== navOverShader) {
         navOverShader = nowOverShader;
         if (navOverShader) section.removeAttribute("data-nav-ink");
@@ -232,7 +259,12 @@ export function useContactReveal(enabled: boolean) {
       if (current < 0) {
         current = target;
       } else {
-        current += (target - current) * (1 - Math.exp(-deltaMs / 1000 / SMOOTHING));
+        // Capped, because smoothScroll turns off GSAP's lag smoothing, so the
+        // first frame back from a hidden tab reports the whole time away.
+        const dt = Math.min(deltaMs / 1000, 0.05);
+        const eased = (target - current) * (1 - Math.exp(-dt / SMOOTHING));
+        const limit = MAX_RATE * dt;
+        current += Math.max(-limit, Math.min(limit, eased));
         if (Math.abs(target - current) < 1e-4) current = target;
       }
       if (current !== previous) apply(current);

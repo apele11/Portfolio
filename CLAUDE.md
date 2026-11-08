@@ -296,13 +296,18 @@ The cost is paid back by `manualChunks` in `vite.config.ts`, which isolates `nod
 ### Contact section (`src/components/contact/`)
 The last thing on the Works page. A 340vh track with a sticky panel: a sheet of
 paper slides up over the fixed hero shader with the EA monogram cut out of it, the
-cut-out dives through the E until the paper is gone, then the heading splits around
+cut-out dives through the A until the paper is gone, then the heading splits around
 the form card. `useContactReveal` drives it.
 
 - The monogram is `src/svg/ea-monogram.svg`, traced from `public/EA-Icon.png` and
-  cropped to the letters. The hook hardcodes its viewBox and the E's upright
-  (`STEM_X`, `STEM_W`), because the dive has to land inside a solid stroke or the
-  zoom ends on paper. Re-trace the mark and those constants move with it.
+  cropped to the letters. The hook hardcodes its viewBox and the dive's anchor
+  (`ANCHOR_X/Y/R`: where the A's diagonal meets its crossbar, the thick solid point
+  nearest the centre), because the dive has to land inside a stroke or the zoom
+  ends on paper. Both phases are pure zooms about a fixed point. Do not aim at an
+  off-centre stroke and pan to it: an earlier version did, and the sideways slide
+  read as the composition lurching. Re-trace the mark and the constants move with it.
+- Playback is rate-capped (`MAX_RATE`), so a fast flick plays the reveal over
+  about 2.5s instead of snapping through it in a few frames.
 - The paper's mask is the monogram plus a full-size block composited with
   `exclude`, so the paper keeps everything *except* the letters. What shows through
   is the real hero canvas, not a second WebGL context.
