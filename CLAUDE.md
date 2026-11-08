@@ -46,6 +46,19 @@ invisible to a crawler, unreachable by keyboard, silent to a screen reader, and
 cannot be cmd-clicked. It is also the *only* crawl path into the case studies —
 nothing else on the site links to them, and Googlebot follows hrefs rather than
 clicking. Do not revert it to a handler.
+- **Covers are device mockups, and nothing is laid over them.** Each `coverUrl`
+should point at a 16:9 composite, `compressed/<Project>/<Project>-Card.webp`,
+designed in the Figma file "Portfolio Covers" (`wPCepVVwk631Iy6fHjOfSf`): the
+product's real screens inside a phone, laptop, display or browser frame, so a
+reviewer can tell mobile from desktop work before reading anything. On desktop
+`ProjectCard` sets the text column beside the cover (text 6 to 32% of the panel,
+cover 35 to 87%). It used to overlay the cover's left side behind a dark scrim,
+which collided with the artwork and left white type unreadable on light covers;
+the `scrimStrength`/`scrimWidth` fields and their admin controls no longer affect
+the grid. To change a cover, edit it in Figma, export the frame at 1920x1080 into
+the drop zone, run `npm run assets`, and point `coverUrl` at the result.
+**Deploy before changing `coverUrl`:** production reads Firestore live, so a URL
+to a file that is not deployed yet shows a broken cover on the live site.
 
 The home page project grid (`src/components/Projects.tsx`) is seeded from a build-time snapshot (below), then corrected by a live read: `onSnapshot` in dev so admin edits appear live, a one-shot `getDocs` in prod. The admin panel and single-project page use one-shot `getDoc`/`getDocs`. Projects are always sorted by the numeric `order` field.
 

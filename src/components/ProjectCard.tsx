@@ -1,7 +1,6 @@
 import { useRef, type CSSProperties } from "react";
 import { Link } from "react-router-dom";
 import CoverMedia from "./CoverMedia";
-import { coverScrimGradient } from "../data/coverScrim";
 import { useIsMobile, VIEWPORT_UNIT } from "../viewport";
 import { useScrollAnimation } from "../hooks/useScrollAnimation";
 
@@ -16,8 +15,6 @@ export interface ProjectCardProps {
   color2?: string;
   color3?: string;
   color4?: string;
-  scrimStrength?: number;
-  scrimWidth?: number;
   order?: number;
 }
 
@@ -27,8 +24,6 @@ export default function ProjectCard({
   header,
   subtitle,
   coverUrl,
-  scrimStrength,
-  scrimWidth,
 }: ProjectCardProps) {
   const isMobile = useIsMobile();
   const rootRef = useRef<HTMLAnchorElement>(null);
@@ -42,8 +37,6 @@ export default function ProjectCard({
     smoothing: 1.1,
     layoutKey: isMobile ? "mobile" : "desktop",
   });
-
-  const scrim = coverScrimFor({ scrimStrength, scrimWidth });
 
   return (
     <Link
@@ -75,18 +68,14 @@ export default function ProjectCard({
         </>
       ) : (
         <>
-          {/* The scrim lives inside the animated wrapper, not beside it: as a
-              sibling it kept its layout position while GSAP translated the
-              image, so the two came apart mid-scroll. The wrapper is inset-0
-              because transforming it makes it the containing block for these
-              absolutely positioned children. */}
+          {/* The wrapper is inset-0 because GSAP transforms it, which makes it
+              the containing block for the absolutely positioned cover. */}
           <div ref={imageRef} style={imageLayer}>
             <CoverMedia
               src={coverUrl}
               alt={header}
               style={projectImage}
             />
-            {scrim && <div style={scrim} aria-hidden="true" />}
           </div>
           <div ref={textContentRef} style={textContent}>
             <p style={eyebrowStyle}>{eyebrow}</p>
@@ -167,46 +156,41 @@ const mobileSubtitle: CSSProperties = {
   fontSize: "15px",
 };
 
+/*
+ * Desktop: the text column sits beside the cover, never on it. The covers are
+ * composed device mockups with logos and screens across their full width, so
+ * type laid over them collided with the artwork, and white text over a light
+ * cover (LockedIn's cream) could not be read at all. The cover spans 35% to 87%
+ * of the panel and the text 6% to 32%, which leaves a gutter at every desktop
+ * width down to the 769px breakpoint.
+ */
+const COVER_WIDTH = 52; // % of the panel
+
 const projectImage: CSSProperties = {
   position: "absolute",
   top: "50%",
-  left: "50%",
+  left: "61%",
   transform: "translate(-50%, -50%)",
-  width: "50%",
+  width: `${COVER_WIDTH}%`,
   aspectRatio: "16 / 9",
   objectFit: "cover",
   zIndex: 1,
 };
 
-function coverScrimFor(props: { scrimStrength?: number; scrimWidth?: number }): CSSProperties | null {
-  const background = coverScrimGradient(props.scrimStrength, props.scrimWidth);
-  if (!background) return null;
-  return {
-    position: "absolute",
-    top: "50%",
-    left: "50%",
-    transform: "translate(-50%, -50%)",
-    width: "50%",
-    aspectRatio: "16 / 9",
-    zIndex: 1,
-    background,
-    pointerEvents: "none",
-  };
-}
-
 const textContent: CSSProperties = {
   position: "absolute",
   zIndex: 2,
-  width: "clamp(10%, 30%, 600px)",
-  top: "calc(50% - (50vw * 9 / 32))",
-  left: "calc(15%)",
+  width: "26%",
+  // Top-aligned with the cover's top edge: half its 16:9 height above centre.
+  top: `calc(50% - (${COVER_WIDTH}vw * 9 / 32))`,
+  left: "6%",
   display: "flex",
   flexDirection: "column",
   gap: "8px",
 };
 
 const eyebrowStyle: CSSProperties = {
-  fontSize: "18px",
+  fontSize: "clamp(12px, 1.05vw, 18px)",
   fontWeight: 600,
   letterSpacing: "0.15em",
   textTransform: "uppercase",
@@ -217,7 +201,9 @@ const eyebrowStyle: CSSProperties = {
 };
 
 const titleStyle: CSSProperties = {
-  fontSize: "42px",
+  // Scales with the narrower column so "NEIGHBORHOOD" still fits on one line
+  // at the 769px end of desktop.
+  fontSize: "clamp(24px, 2.6vw, 42px)",
   fontWeight: 700,
   margin: 0,
   color: "white",
