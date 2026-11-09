@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, type RefObject } from "react";
 import type { CSSProperties } from "react";
 import type * as THREE from "three";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { VIEWPORT_HEIGHT } from "../viewport";
 import ProjectCard from "./ProjectCard";
 
@@ -39,6 +40,20 @@ export default function ProjectsFrontend({
 }: ProjectsFrontendProps) {
   const [visibleProjectId, setVisibleProjectId] = useState<string | null>(null);
   const sectionRefs = useRef<{ [key: string]: HTMLElement | null }>({});
+
+  // The grid paints from the build-time snapshot and is then replaced by the
+  // live read. When the CMS order has changed since the last build, React moves
+  // the existing cards instead of remounting them, so each card's ScrollTrigger
+  // keeps the start and end it measured at its old position. A card moved up
+  // stays at opacity 0 until the page reaches the spot it used to occupy: moving
+  // LockedIn from third to first left it invisible on the live site. Re-measure
+  // whenever the order changes. This runs after the cards' own effects, so the
+  // triggers exist by the time it fires.
+  const order = projects.map((project) => project.id).join(",");
+  useEffect(() => {
+    const frame = requestAnimationFrame(() => ScrollTrigger.refresh());
+    return () => cancelAnimationFrame(frame);
+  }, [order]);
 
   // Use scroll event listener with requestAnimationFrame to detect the active section
   useEffect(() => {

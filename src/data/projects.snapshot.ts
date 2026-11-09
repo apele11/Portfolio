@@ -9,12 +9,26 @@ import type { Project } from "../types/project";
 
 export const PROJECTS_SNAPSHOT: Project[] = [
   {
+    "id": "1777141672057",
+    "eyebrow": "User Research, Mobile App",
+    "header": "LockedIn",
+    "subtitle": "A study spot finder for students at the University of Florida",
+    "coverUrl": "/assets/compressed/LockedIn/LockedIn-Card.webp",
+    "order": 0,
+    "color1": "#eb8e4b",
+    "color2": "#ffc670",
+    "color3": "#ffe3bd",
+    "color4": "#fffbed",
+    "scrimStrength": 0.54,
+    "scrimWidth": 0
+  },
+  {
     "id": "1782961131323",
     "eyebrow": "Internal Tool, Team of 8",
     "header": "New Business Case Studies",
     "subtitle": "The Agency at University of Florida",
     "coverUrl": "/assets/compressed/NewBusiness/NewBusiness-Card.webp",
-    "order": 0,
+    "order": 1,
     "color1": "#5301d7",
     "color2": "#aa9aff",
     "color3": "#c4b9f8",
@@ -28,27 +42,13 @@ export const PROJECTS_SNAPSHOT: Project[] = [
     "header": "Libre3D",
     "subtitle": "Open-Source alternative to Spline designed for the Agency at UF creative team",
     "coverUrl": "/assets/compressed/Libre3D/Libre3D-Card.webp",
-    "order": 1,
+    "order": 2,
     "color1": "#111627",
     "color2": "#2094C5",
     "color3": "#4f8cff",
     "color4": "#2d5eb0",
     "scrimStrength": 0.4,
     "scrimWidth": 0.3
-  },
-  {
-    "id": "1777141672057",
-    "eyebrow": "User Research, Mobile App",
-    "header": "LockedIn",
-    "subtitle": "A study spot finder for students at the University of Florida",
-    "coverUrl": "/assets/compressed/LockedIn/LockedIn-Card.webp",
-    "order": 2,
-    "color1": "#eb8e4b",
-    "color2": "#ffc670",
-    "color3": "#ffe3bd",
-    "color4": "#fffbed",
-    "scrimStrength": 0.54,
-    "scrimWidth": 0
   },
   {
     "id": "1787715578541",

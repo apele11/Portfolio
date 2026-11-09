@@ -85,6 +85,14 @@ live read lands, so a stale snapshot self-corrects within about a second; it onl
 matters for the first paint. Content edited in the admin panel without a redeploy
 stays stale in the snapshot until the next build.
 
+A reorder is the one edit where "stale for a second" was not harmless. When the
+live order differs from the snapshot's, React moves the mounted cards rather than
+remounting them, and each card's ScrollTrigger keeps the start/end it measured at
+its old position. A card moved up then sat at opacity 0 until the page reached its
+old spot, which made LockedIn vanish from the live site after it was moved to the
+top. `ProjectsFrontend` now calls `ScrollTrigger.refresh()` whenever the order
+changes. Keep that if the grid is reworked.
+
 The script fails soft: if Firestore is unreachable it warns, keeps the committed
 snapshot, and lets the build continue. Never hand-edit the generated file.
 
