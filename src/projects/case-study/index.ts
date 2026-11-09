@@ -13,6 +13,7 @@ export {
   MediaGroup,
   PhoneRow,
   PhoneShowcase,
+  PhonePrototype,
   MediaCompare,
   Embed,
   DeckSlides,
@@ -36,4 +37,4 @@ export {
   SystemMap,
 } from "./sections";
 
-export type { PhoneScreen, DeckSlide } from "./sections";
+export type { PhoneScreen, DeckSlide, PrototypeFlow } from "./sections";

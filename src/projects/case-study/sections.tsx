@@ -304,16 +304,23 @@ export function MediaRow({
 export function PhoneRow({
   children,
   columns = 3,
+  bezel,
   className,
 }: {
   children: ReactNode;
   /** Cells across the row. Three across the full measure is about 300px wide. */
   columns?: 2 | 3 | 4;
+  /**
+   * Draw each screen inside a dark phone bezel. For exported design frames,
+   * whose white screens otherwise dissolve into the white page and stop
+   * reading as phones at all. A screen recording brings its own edges.
+   */
+  bezel?: boolean;
   className?: string;
 }) {
   return (
     <div
-      className={`cs-phone-row${className ? ` ${className}` : ""}`}
+      className={`cs-phone-row${bezel ? " cs-phone--bezel" : ""}${className ? ` ${className}` : ""}`}
       style={{ "--cs-phones": columns } as CSSProperties}
     >
       {children}
@@ -386,7 +393,19 @@ const SHOWCASE_SIDE_BY_SIDE = "(min-width: 900px)";
  * instead: both screens visible at once, which at that size is the fastest
  * way to read the section.
  */
-export function PhoneShowcase({ screens, children }: { screens: PhoneScreen[]; children: ReactNode }) {
+/** Stills and clips share the showcase; the extension decides which element draws one. */
+const isVideo = (src: string) => /\.(mp4|webm|mov)$/i.test(src);
+
+export function PhoneShowcase({
+  screens,
+  bezel,
+  children,
+}: {
+  screens: PhoneScreen[];
+  /** See `PhoneRow`. */
+  bezel?: boolean;
+  children: ReactNode;
+}) {
   const [active, setActive] = useState(0);
   const sideBySide = useMediaQuery(SHOWCASE_SIDE_BY_SIDE);
   const frameRef = useRef<HTMLDivElement>(null);
@@ -432,10 +451,14 @@ export function PhoneShowcase({ screens, children }: { screens: PhoneScreen[]; c
     return (
       <div className="cs-showcase cs-showcase--stacked">
         <div className="cs-body cs-showcase__text">{children}</div>
-        <PhoneRow columns={screens.length >= 3 ? 3 : 2}>
-          {screens.map((screen) => (
-            <VideoFigure key={screen.src} src={screen.src} poster={screen.poster} caption={screen.caption} />
-          ))}
+        <PhoneRow columns={screens.length >= 3 ? 3 : 2} bezel={bezel}>
+          {screens.map((screen) =>
+            isVideo(screen.src) ? (
+              <VideoFigure key={screen.src} src={screen.src} poster={screen.poster} caption={screen.caption} />
+            ) : (
+              <Figure key={screen.src} src={screen.src} alt={screen.label} caption={screen.caption} />
+            )
+          )}
         </PhoneRow>
       </div>
     );
@@ -444,7 +467,7 @@ export function PhoneShowcase({ screens, children }: { screens: PhoneScreen[]; c
   const current = screens[active];
 
   return (
-    <div className="cs-showcase">
+    <div className={`cs-showcase${bezel ? " cs-phone--bezel" : ""}`}>
       <div className="cs-body cs-showcase__text">{children}</div>
 
       <figure className="cs-showcase__figure">
@@ -466,7 +489,8 @@ export function PhoneShowcase({ screens, children }: { screens: PhoneScreen[]; c
               direction of travel falls out of the arithmetic, so a swipe always
               runs the way the arrow pointed without tracking it separately. */}
           <div className="cs-showcase__track" style={{ transform: `translateX(-${active * 100}%)` }}>
-            {screens.map((screen, i) => (
+            {screens.map((screen, i) =>
+              isVideo(screen.src) ? (
               <video
                 key={screen.src}
                 ref={(el) => {
@@ -481,7 +505,20 @@ export function PhoneShowcase({ screens, children }: { screens: PhoneScreen[]; c
                 playsInline
                 preload="metadata"
               />
-            ))}
+              ) : (
+                <img
+                  key={screen.src}
+                  className="cs-showcase__screen"
+                  aria-hidden={i !== active}
+                  src={screen.src}
+                  alt={i === active ? screen.label : ""}
+                  /* Not lazy: the track is translated off-axis, and a lazy image
+                     parked off to the side may never be judged near enough to load. */
+                  loading="eager"
+                  decoding="async"
+                />
+              )
+            )}
           </div>
         </div>
 
@@ -527,6 +564,156 @@ export function PhoneShowcase({ screens, children }: { screens: PhoneScreen[]; c
   );
 }
 
+export interface PrototypeFlow {
+  /** Button label, e.g. the role the flow belongs to. */
+  label: string;
+  /** Embed URL for the flow in the light theme. */
+  src: string;
+  /** The same flow in the dark theme. Any flow carrying one adds a theme toggle. */
+  darkSrc?: string;
+}
+
+/** The design frame the prototype is laid out at. The iframe renders at this size and is scaled down. */
+const PROTO_FRAME = { width: 390, height: 844 };
+
+/**
+ * A Figma prototype inside a phone, beside a passage, with a button per flow.
+ *
+ * A plain `Embed` shows a mobile prototype as a small screen floating in a
+ * black canvas with Figma's chrome around it, which is the one place on an app
+ * study where the work stops looking like a phone. Here the iframe is rendered
+ * at the frame's own 390x844, with Figma's UI hidden and `scale-down-width`
+ * scaling, so the prototype fills it edge to edge, and is then scaled with a
+ * transform to fit the bezel. Rendering it smaller instead does not work:
+ * Figma either letterboxes the frame in black or lays it out at full width
+ * and clips the right edge.
+ *
+ * Hiding Figma's UI also hides its flow list and restart control, so the flow
+ * buttons stand in for both. Choosing a flow remounts the frame at that flow's
+ * starting screen. The frame is not mounted until a reader asks for it, since a
+ * Figma prototype is a heavy page to load for someone who only scrolled past.
+ */
+export function PhonePrototype({
+  flows,
+  title,
+  poster,
+  caption,
+  href,
+  hrefLabel = "Open in Figma",
+  children,
+}: {
+  flows: PrototypeFlow[];
+  title: string;
+  /** Still of the first flow's first screen, shown until the reader starts the prototype. */
+  poster: string;
+  caption?: string;
+  href?: string;
+  hrefLabel?: string;
+  children: ReactNode;
+}) {
+  const [live, setLive] = useState(false);
+  const [flow, setFlow] = useState(0);
+  const [dark, setDark] = useState(false);
+  /* Bumped on every flow choice, so choosing the current flow again restarts it. */
+  const [run, setRun] = useState(0);
+  const [scale, setScale] = useState(0);
+  const screenRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const el = screenRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver(([entry]) => setScale(entry.contentRect.width / PROTO_FRAME.width));
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
+  const hasDark = flows.some((f) => f.darkSrc);
+  const current = flows[flow];
+  const src = dark && current.darkSrc ? current.darkSrc : current.src;
+
+  const start = (next: number, nextDark = dark) => {
+    setFlow(next);
+    setDark(nextDark);
+    setRun((r) => r + 1);
+    setLive(true);
+  };
+
+  return (
+    <div className="cs-showcase cs-proto cs-phone--bezel">
+      <div className="cs-body cs-showcase__text">{children}</div>
+
+      <figure className="cs-showcase__figure">
+        <div className="cs-showcase__phone cs-proto__phone" ref={screenRef}>
+          {live ? (
+            <iframe
+              key={`${src}-${run}`}
+              className="cs-proto__frame"
+              src={src}
+              title={`${title}: ${current.label}`}
+              allow="fullscreen"
+              style={{
+                width: PROTO_FRAME.width,
+                height: PROTO_FRAME.height,
+                transform: `scale(${scale})`,
+              }}
+            />
+          ) : (
+            <button
+              type="button"
+              className="cs-proto__start"
+              onClick={() => setLive(true)}
+              aria-label={`Start ${title}`}
+            >
+              <img src={poster} alt="" />
+              <span className="cs-proto__cue">Tap to try it</span>
+            </button>
+          )}
+        </div>
+
+        <div className="cs-proto__controls">
+          <div className="cs-proto__flows" role="group" aria-label="Prototype flows">
+            {flows.map((f, i) => (
+              <button
+                key={f.label}
+                type="button"
+                className="cs-proto__chip"
+                aria-pressed={live && i === flow}
+                onClick={() => start(i)}
+              >
+                {f.label}
+              </button>
+            ))}
+          </div>
+          {hasDark ? (
+            <button
+              type="button"
+              className="cs-proto__chip cs-proto__theme"
+              aria-label={`Theme: ${dark ? "dark" : "light"}. Switch theme`}
+              onClick={() => start(flow, !dark)}
+            >
+              {dark ? "Dark" : "Light"}
+            </button>
+          ) : null}
+        </div>
+
+        {caption || href ? (
+          <figcaption>
+            {caption}
+            {href ? (
+              <>
+                {caption ? " " : null}
+                <a href={href} target="_blank" rel="noopener noreferrer">
+                  {hrefLabel} ↗
+                </a>
+              </>
+            ) : null}
+          </figcaption>
+        ) : null}
+      </figure>
+    </div>
+  );
+}
+
 /** Side-by-side media, e.g. a before/after comparison. Stacks on mobile. */
 export function MediaCompare({ children, size }: { children: ReactNode; size?: MediaSize }) {
   return <div className={`cs-compare${sizeClass(size)}`}>{children}</div>;
@@ -562,6 +749,8 @@ interface EmbedProps {
    * way, so nothing is lost by leaving it to the artwork.
    */
   posterPlay?: boolean;
+  /** Text of the `href` link. Defaults to "Open the live site". */
+  hrefLabel?: string;
 }
 
 /** A live, interactive embed of an external site (e.g. the shipped product). */
@@ -575,6 +764,7 @@ export function Embed({
   poster,
   posterAlt,
   posterPlay = true,
+  hrefLabel = "Open the live site",
 }: EmbedProps) {
   /* With no poster the frame is live from the start, which is the old
      behaviour and right for a light embed further down a page. */
@@ -610,7 +800,7 @@ export function Embed({
             <>
               {caption ? " " : null}
               <a href={href} target="_blank" rel="noopener noreferrer">
-                Open the live site ↗
+                {hrefLabel} ↗
               </a>
             </>
           )}

@@ -9,6 +9,7 @@ import TwixLayout from "../projects/layouts/TwixLayout";
 import PinkAheadLayout from "../projects/layouts/PinkAheadLayout";
 import NeighborhoodSnackLayout from "../projects/layouts/NeighborhoodSnackLayout";
 import SociopolisLayout from "../projects/layouts/SociopolisLayout";
+import HoggetowneLayout from "../projects/layouts/HoggetowneLayout";
 
 export type ProjectLayoutProps = {
   project: ProjectDetail;
@@ -68,6 +69,10 @@ const layoutRegistry: LayoutRegistryEntry[] = [
   {
     matches: (project) => headerIncludes(project, "sociopolis"),
     component: SociopolisLayout,
+  },
+  {
+    matches: (project) => headerIncludes(project, "hoggetowne", "hogtown"),
+    component: HoggetowneLayout,
   },
 ];
 
