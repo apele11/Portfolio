@@ -296,6 +296,63 @@
   cursor: default;
 }
 
+/* Touch screens. iOS Safari zooms the whole page into any field set under
+   16px the moment it takes focus, and at 24px tall the fields and the 26px
+   button were below a thumb's reach. The form gap gives back part of the
+   height the taller rows add, so the card still fits the sticky panel. */
+@media (pointer: coarse), (max-width: 768px) {
+  .contact-card__form {
+    gap: 12px;
+  }
+
+  .contact-card__field input,
+  .contact-card__field select,
+  .contact-card__field textarea {
+    padding: 10px 0;
+    font-size: 16px;
+  }
+
+  .contact-card__chevron {
+    bottom: 14px;
+  }
+
+  .contact-card__button {
+    min-height: 44px;
+    padding: 10px 24px;
+    font-size: 14px;
+  }
+}
+
+/* Short phones (an SE is 667px). useContactReveal splits the heading to
+   SPLIT_PAD above and below the card, so a card taller than about
+   100svh - 200px pushes "Have an idea?" off the top of the panel, which was
+   already happening here before the fields grew. This keeps the 16px type
+   and gives up row padding and gaps instead, landing the card near 470px. */
+@media (max-height: 720px) and (pointer: coarse),
+  (max-height: 720px) and (max-width: 768px) {
+  .contact-card {
+    padding: 20px;
+  }
+
+  .contact-card__title {
+    margin-bottom: 14px;
+  }
+
+  .contact-card__form {
+    gap: 8px;
+  }
+
+  .contact-card__field input,
+  .contact-card__field select,
+  .contact-card__field textarea {
+    padding: 6px 0;
+  }
+
+  .contact-card__chevron {
+    bottom: 10px;
+  }
+}
+
 .contact-card__error {
   margin: 0;
   font-size: 13px;

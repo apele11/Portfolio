@@ -827,6 +827,11 @@
 .cs-showcase--stacked {
   display: flex;
   flex-direction: column;
+  /* Overrides the side-by-side `align-items: center` above. In a column that
+     sizes each child to its content, and a PhoneRow's `minmax(0, 1fr)` tracks
+     have none: the row collapsed to 10px, every phone to 0px wide, and the
+     captions piled on top of one another. */
+  align-items: stretch;
   gap: 26px;
 }
 
@@ -1529,6 +1534,23 @@
 
 .cs-cta:hover span {
   transform: translateX(4px);
+}
+
+/* Touch targets. The closing CTAs measured 26px tall and the links inside
+   captions 21px. Padding grows the hit area to about 44px, and on the inline
+   caption links a matching negative margin keeps the caption's line box (and
+   so its layout) exactly as it was. */
+@media (pointer: coarse) {
+  .cs-cta {
+    padding-block: 9px;
+  }
+
+  .cs-figure figcaption a,
+  .cs-proto figcaption a {
+    display: inline-block;
+    padding-block: 11px;
+    margin-block: -11px;
+  }
 }
 
 /* ── Supporting primitives ────────────────────────────────────

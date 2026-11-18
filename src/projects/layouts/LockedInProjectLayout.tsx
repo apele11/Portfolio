@@ -31,6 +31,10 @@ const FIGMA_PROTOTYPE =
 const FIGMA_EMBED =
   "https://embed.figma.com/proto/ICezDX54AaIJOqftzLCIWp/LockedIn?node-id=103-1480&p=f&scaling=scale-down&content-scaling=fixed&page-id=30%3A439&starting-point-node-id=103%3A1480&show-proto-sidebar=1&embed-host=share";
 
+// The same prototype without the flow sidebar, for a phone-width column where
+// the sidebar would take most of the frame.
+const FIGMA_EMBED_MOBILE = FIGMA_EMBED.replace("show-proto-sidebar=1", "show-proto-sidebar=0");
+
 interface ProjectLayoutProps {
   project: ProjectDetail;
   onBack: () => void;
@@ -333,6 +337,8 @@ export default function LockedInProjectLayout({ project, onBack }: ProjectLayout
           src={FIGMA_EMBED}
           title="LockedIn Figma prototype"
           ratio={72}
+          mobileRatio={165}
+          mobileSrc={FIGMA_EMBED_MOBILE}
           href={FIGMA_PROTOTYPE}
           caption="Interactive — start at the map."
         />

@@ -751,7 +751,17 @@ interface EmbedProps {
   posterPlay?: boolean;
   /** Text of the `href` link. Defaults to "Open the live site". */
   hrefLabel?: string;
+  /**
+   * Shape and source for narrow screens. A phone prototype in a landscape
+   * frame renders as a sliver, and on a 327px column Figma's prototype sidebar
+   * took most of that, so a mobile reader got a phone about 90px wide. Set
+   * these to give it a portrait frame and a sidebar-free URL there.
+   */
+  mobileRatio?: number;
+  mobileSrc?: string;
 }
+
+const EMBED_NARROW = "(max-width: 720px)";
 
 /** A live, interactive embed of an external site (e.g. the shipped product). */
 export function Embed({
@@ -765,16 +775,21 @@ export function Embed({
   posterAlt,
   posterPlay = true,
   hrefLabel = "Open the live site",
+  mobileRatio,
+  mobileSrc,
 }: EmbedProps) {
   /* With no poster the frame is live from the start, which is the old
      behaviour and right for a light embed further down a page. */
   const [live, setLive] = useState(!poster);
+  const narrow = useMediaQuery(EMBED_NARROW);
+  const frameRatio = narrow && mobileRatio ? mobileRatio : ratio;
+  const frameSrc = narrow && mobileSrc ? mobileSrc : src;
 
   return (
     <figure className={`cs-figure cs-embed${sizeClass(size)}`}>
-      <div className="cs-embed-frame" style={{ paddingTop: `${ratio}%` }}>
+      <div className="cs-embed-frame" style={{ paddingTop: `${frameRatio}%` }}>
         {live ? (
-          <iframe src={src} title={title} loading="lazy" allow="fullscreen" />
+          <iframe key={frameSrc} src={frameSrc} title={title} loading="lazy" allow="fullscreen" />
         ) : (
           /* The click that starts it is also the click that gives it focus,
              which a keyboard-driven demo needs anyway. */

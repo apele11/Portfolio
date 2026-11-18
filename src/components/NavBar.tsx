@@ -5,27 +5,47 @@ import type { CSSProperties } from "react";
 import { prefetchPlayground } from "../playgroundPrefetch";
 
 
+/*
+ * The hit area is padded out to a 44px-tall target and the padding is taken
+ * back with a negative margin, so the row keeps the layout of the bare text.
+ * At 11.5px type the label alone was a 38x17 target, which a thumb misses.
+ */
+const HIT_Y = 12;
+const HIT_X = 8;
+
 function NavLink({
   children,
   to,
   onClick,
+  onHome,
   onIntent,
 }: {
   children: string;
-  to?: string;
+  to: string;
   onClick?: () => void;
+  /**
+   * Takes over a plain click (to scroll home instead of a hard route change)
+   * while leaving the element a real link, so a modified click or a long-press
+   * still opens it in a new tab. It used to be a `div role="button"`, which
+   * offered neither.
+   */
+  onHome?: () => void;
   /** Fired on hover/focus — a click is likely, so start fetching what it needs. */
   onIntent?: () => void;
 }) {
   const [isHovered, setIsHovered] = useState(false);
   const location = useLocation();
 
-  const isActive = to ? location.pathname === to : false;
-  const underlineWidth = isHovered || isActive ? "100%" : "0%";
+  // The home links are actions as much as destinations: underlining EMILY and
+  // WORKS on every visit to "/" would mark the wordmark as a current page.
+  const isActive = !onHome && location.pathname === to;
+  const underlineWidth = isHovered || isActive ? `calc(100% - ${HIT_X * 2}px)` : "0%";
 
   const sharedStyles: CSSProperties = {
     position: "relative",
     display: "inline-block",
+    padding: `${HIT_Y}px ${HIT_X}px`,
+    margin: `-${HIT_Y}px -${HIT_X}px`,
     cursor: "pointer",
     textDecoration: "none",
     color: "inherit",
@@ -34,34 +54,14 @@ function NavLink({
 
   const underlineStyles: CSSProperties = {
     position: "absolute",
-    bottom: "-4px",
-    left: 0,
+    bottom: `${HIT_Y - 4}px`,
+    left: `${HIT_X}px`,
     height: "1.5px",
     backgroundColor: "currentColor",
     width: underlineWidth,
     transition: "width 0.3s ease",
   };
 
-  // Button-like link (no route), for custom actions
-  if (!to) {
-    return (
-      <div
-        style={sharedStyles}
-        onMouseEnter={() => setIsHovered(true)}
-        onMouseLeave={() => setIsHovered(false)}
-        onClick={onClick}
-        role="button"
-        tabIndex={0}
-        onKeyDown={(e) => {
-          if (e.key === "Enter" || e.key === " ") onClick?.();
-        }}
-      >
-        <span style={link}>{children}</span>
-        <div style={underlineStyles} />
-      </div>
-    );
-  }
-  // Normal route navigation
   return (
     <Link
       to={to}
@@ -73,7 +73,15 @@ function NavLink({
       onMouseLeave={() => setIsHovered(false)}
       onFocus={onIntent}
       onTouchStart={onIntent}
-      onClick={onClick}
+      onClick={(e) => {
+        const modified = e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0;
+        if (onHome && !modified) {
+          e.preventDefault();
+          onHome();
+          return;
+        }
+        onClick?.();
+      }}
     >
       <span style={link}>{children}</span>
       <div style={underlineStyles} />
@@ -140,6 +148,10 @@ export default function NavBar() {
         setIsVisible(true);
       } else if (isScrollingDown) {
         setIsVisible(false);
+        // The menu hangs off the bar, so it must leave with it. Left open, it
+        // stayed pinned over the content after the bar (and the button that
+        // closes it) had slid away, with no way to dismiss it.
+        setIsMenuOpen(false);
       } else {
         setIsVisible(true);
       }
@@ -165,13 +177,14 @@ export default function NavBar() {
     <nav style={{ ...nav, transform: isVisible ? "translateY(0)" : "translateY(-100%)" }}>
       <div ref={innerRef} style={{ ...navInner, color: isOverLight ? "#0a0a0a" : "#ffffff" }}>
         {/* EMILY → "/" (or scroll to hero if already on "/") */}
-        <NavLink onClick={goHome}>EMILY</NavLink>
+        <NavLink to="/" onHome={goHome}>EMILY</NavLink>
 
         {isMobile ? (
           <button
             type="button"
-            aria-label="Open navigation menu"
+            aria-label={isMenuOpen ? "Close navigation menu" : "Open navigation menu"}
             aria-expanded={isMenuOpen}
+            aria-controls="mobile-nav-menu"
             style={menuButton}
             onClick={() => setIsMenuOpen((prev) => !prev)}
           >
@@ -182,7 +195,7 @@ export default function NavBar() {
         ) : (
           <div style={rightGroup}>
             {/* WORKS → "/" (or scroll to hero if already on "/") */}
-            <NavLink onClick={goHome}>WORKS</NavLink>
+            <NavLink to="/" onHome={goHome}>WORKS</NavLink>
 
             <NavLink to="/playground" onIntent={prefetchPlayground}>
               PLAYGROUND
@@ -199,12 +212,14 @@ export default function NavBar() {
       </div>
 
       {isMobile && (
-        <div style={{ ...mobileMenu, ...(isMenuOpen ? mobileMenuOpen : mobileMenuClosed) }}>
-          <NavLink
-            onClick={() => {
-              goHome();
-            }}
-          >
+        <div
+          id="mobile-nav-menu"
+          // Hidden only by opacity, the closed menu's links stayed in the tab
+          // order and the accessibility tree: four links nobody could see.
+          inert={!isMenuOpen}
+          style={{ ...mobileMenu, ...(isMenuOpen ? mobileMenuOpen : mobileMenuClosed) }}
+        >
+          <NavLink to="/" onHome={goHome}>
             WORKS
           </NavLink>
 
@@ -302,8 +317,11 @@ const mobileMenu: CSSProperties = {
   pointerEvents: "none",
   display: "flex",
   flexDirection: "column",
-  gap: "1rem",
-  padding: "1rem 1.25rem",
+  // Each link's hit area is 24px taller than its text (see HIT_Y); a 20px gap
+  // gives a 44px pitch so neighbouring targets barely overlap.
+  alignItems: "flex-start",
+  gap: "1.25rem",
+  padding: "1.25rem 1.25rem",
   borderRadius: 0,
   border: "1px solid rgba(255,255,255,0.18)",
   backgroundColor: "rgba(22, 22, 28, 0.42)",
